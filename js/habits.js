@@ -300,20 +300,33 @@ export function initHabitHandlers(renderHomeFn) {
   _renderHome = renderHomeFn;
   window._habitToggle = (id) => {
     const wasCompleted = toggleHabitToday(id);
-    if (wasCompleted) {
-      const el = document.querySelector(`[data-hid="${id}"]`);
-      if (el) {
-        const r = el.getBoundingClientRect();
-        fireBurst(r.left + r.width / 2, r.top + r.height / 2, 'habit');
-        navigator.vibrate && navigator.vibrate([8, 40, 12]);
-        el.classList.add('habit-completing');
-        el.addEventListener('animationend', () => {
-          el.classList.remove('habit-completing');
-          _refreshHabitsSection();
-        }, { once: true });
-        return;
+    const el = document.querySelector(`[data-hid="${id}"]`);
+
+    if (wasCompleted && el) {
+      /* ── Feedback visual INMEDIATO — no espera el re-render ── */
+      const h = habits.find(hb => hb.id === id);
+      const color = h?.color || '#6c63d4';
+      el.classList.add('done');
+      const chk = el.querySelector('.habit-check');
+      if (chk) {
+        chk.classList.add('done');
+        chk.style.background   = color;
+        chk.style.borderColor  = color;
+        chk.innerHTML = `<svg width="11" height="11" viewBox="0 0 11 11" fill="none"><polyline points="1.5,5.5 4.5,8.5 9.5,2.5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
       }
+      /* ── Efectos ── */
+      const r = el.getBoundingClientRect();
+      fireBurst(r.left + r.width / 2, r.top + r.height / 2, 'habit');
+      navigator.vibrate && navigator.vibrate([8, 40, 12]);
+      /* ── Animación rápida → luego re-render para ring/stats ── */
+      el.classList.add('habit-completing');
+      el.addEventListener('animationend', () => {
+        el.classList.remove('habit-completing');
+        _refreshHabitsSection();
+      }, { once: true });
+      return;
     }
+
     _refreshHabitsSection();
   };
 

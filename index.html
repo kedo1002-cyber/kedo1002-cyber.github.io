@@ -33,10 +33,10 @@
 .habit-card:active{transform:scale(0.975)}
 .habit-card.done{background:var(--bg2)}
 .habit-card.done .habit-name{color:var(--text2)}
-@keyframes habit-complete{0%{transform:scale(1)}30%{transform:scale(1.025)}60%{transform:scale(0.99)}100%{transform:scale(1)}}
-.habit-card.habit-completing{animation:habit-complete 0.45s var(--spring) forwards;pointer-events:none}
+@keyframes habit-complete{0%{transform:scale(1)}40%{transform:scale(1.05)}100%{transform:scale(1)}}
+.habit-card.habit-completing{animation:habit-complete 0.18s ease-out forwards;pointer-events:none}
 .habit-left{flex-shrink:0;margin-top:1px}
-.habit-check{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;transition:all 0.3s var(--spring)}
+.habit-check{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;transition:background 0.12s ease-out,border-color 0.12s ease-out,transform 0.12s ease-out}
 .habit-check.done{transform:scale(1.05)}
 .habit-icono{font-size:13px;line-height:1}
 .habit-body{flex:1;min-width:0}
