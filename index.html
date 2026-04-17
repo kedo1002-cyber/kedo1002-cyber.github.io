@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="KEDO Brain">
+<meta name="application-name" content="KEDO Brain">
+<meta name="theme-color" content="#fafaf8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#141412" media="(prefers-color-scheme: dark)">
+<meta name="description" content="Tu sistema de productividad personal">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" sizes="512x512" href="icon-512.png">
+<title>KEDO Brain</title>
+<link rel="stylesheet" href="styles.css">
+<!-- Estilos adicionales v2 (hábitos, gestos, pulido) -->
+<style id="kb-additions">
+/* ── HÁBITOS — sección en home ── */
+.habits-section{padding:0 14px 4px}
+.habits-header{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.habits-ring-wrap{flex-shrink:0}
+.habits-title-block{flex:1;min-width:0}
+.habits-title{font-size:13px;font-weight:500;color:var(--text);line-height:1.3}
+.habits-sub{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:2px}
+.habit-add-mini{width:32px;height:32px;border-radius:var(--r-sm);border:0.5px solid var(--border2);background:var(--bg2);color:var(--text3);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.18s var(--spring)}
+.habit-add-mini:active{transform:scale(0.88);background:var(--purple-bg);color:var(--purple-text)}
+.habits-list{display:flex;flex-direction:column;gap:6px}
+.habit-card{display:flex;align-items:flex-start;gap:11px;padding:11px 13px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--r);cursor:pointer;transition:transform 0.15s var(--spring),opacity 0.25s,border-color 0.2s;position:relative;overflow:hidden}
+.habit-card:active{transform:scale(0.975)}
+.habit-card.done{background:var(--bg2)}
+.habit-card.done .habit-name{color:var(--text2)}
+@keyframes habit-complete{0%{transform:scale(1)}30%{transform:scale(1.025)}60%{transform:scale(0.99)}100%{transform:scale(1)}}
+.habit-card.habit-completing{animation:habit-complete 0.45s var(--spring) forwards;pointer-events:none}
+.habit-left{flex-shrink:0;margin-top:1px}
+.habit-check{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;transition:all 0.3s var(--spring)}
+.habit-check.done{transform:scale(1.05)}
+.habit-icono{font-size:13px;line-height:1}
+.habit-body{flex:1;min-width:0}
+.habit-name-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px}
+.habit-name{font-size:14px;font-weight:400;color:var(--text);line-height:1.3}
+.habit-21-badge{font-family:'DM Mono',monospace;font-size:11px;font-weight:600;flex-shrink:0;white-space:nowrap}
+.habit-prog-track{height:3px;border-radius:99px;background:var(--bg3);overflow:hidden;margin-bottom:5px}
+.habit-prog-fill{height:100%;border-radius:99px;transition:width 0.7s cubic-bezier(0.4,0,0.2,1)}
+.habit-prog-lbl{font-size:11px;color:var(--text3);line-height:1.3}
+/* kept for dash.js habit stats */
+.habit-meta{display:flex;align-items:center;gap:8px;margin-top:4px}
+.habit-dots{display:flex;gap:3px;align-items:center}
+.h-dot{width:5px;height:5px;border-radius:50%;background:var(--bg3);transition:background 0.2s}
+.h-dot.done{background:var(--green)}
+.h-dot.future{opacity:0.25}
+.habit-streak{font-family:'DM Mono',monospace;font-size:10px;font-weight:500}
+.habit-badge{font-size:9px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:99px;border:0.5px solid transparent;flex-shrink:0}
+.habits-empty{text-align:center;padding:24px 20px 20px;background:var(--bg2);border-radius:var(--r);margin-bottom:8px}
+.habits-empty-icon{width:40px;height:40px;border-radius:50%;background:var(--bg3);margin:0 auto 12px;display:flex;align-items:center;justify-content:center}
+.habits-empty-title{font-size:14px;font-weight:500;margin-bottom:4px}
+.habits-empty-sub{font-size:12px;color:var(--text3);line-height:1.5;margin-bottom:16px}
+.habit-add-btn{padding:10px 22px;background:var(--purple-bg);color:var(--purple-text);border:0.5px solid rgba(108,99,212,0.25);border-radius:var(--r-sm);font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:all 0.18s var(--spring)}
+.habit-add-btn:active{transform:scale(0.95)}
+.habit-add-form{margin-top:10px;background:var(--bg);border:0.5px solid var(--border2);border-radius:var(--r);padding:14px;animation:pg-in 0.25s var(--ease) both}
+.habit-add-input{width:100%;border:none;background:var(--bg2);border-radius:var(--r-sm);padding:10px 13px;font-size:14px;color:var(--text);font-family:inherit;outline:none;margin-bottom:10px;transition:background 0.15s}
+.habit-add-input:focus{background:var(--bg3)}
+.habit-add-input::placeholder{color:var(--text3)}
+.habit-icon-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.habit-icon-opt{width:34px;height:34px;border-radius:8px;border:0.5px solid var(--border);background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;transition:all 0.15s var(--spring)}
+.habit-icon-opt:active,.habit-icon-opt.sel{background:var(--purple-bg);border-color:var(--purple);transform:scale(1.08)}
+.habit-form-btns{display:flex;gap:8px}
+.habit-cancel-btn{flex:1;padding:11px;background:var(--bg2);color:var(--text2);border:0.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:all 0.15s var(--spring)}
+.habit-cancel-btn:active{transform:scale(0.96);opacity:0.8}
+.habit-save-btn{flex:2;padding:11px;background:var(--purple);color:#fff;border:none;border-radius:var(--r-sm);font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:all 0.18s var(--spring)}
+.habit-save-btn:active{transform:scale(0.97);opacity:0.88}
+.habit-stat-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:0.5px solid var(--border)}
+.habit-stat-row:last-child{border-bottom:none}
+.habit-stat-icono{font-size:18px;flex-shrink:0;width:24px;text-align:center}
+.habit-stat-body{flex:1;min-width:0}
+.habit-stat-name{font-size:13px;color:var(--text2);margin-bottom:4px}
+.habit-stat-streak{font-family:'DM Mono',monospace;font-size:18px;font-weight:500;flex-shrink:0;min-width:36px;text-align:right}
+/* ── TASK SWIPE DELETE ── */
+.task-delete-backdrop{position:absolute;inset:0;background:var(--red);border-radius:var(--r);display:flex;align-items:center;justify-content:flex-end;padding-right:18px;opacity:0;z-index:0;pointer-events:none;transition:opacity 0.1s}
+.task>*:not(.task-delete-backdrop){position:relative;z-index:1}
+/* ── UNDO TOAST ── */
+.undo-toast{position:fixed;bottom:calc(80px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(20px);background:var(--text);color:var(--bg);padding:10px 16px;border-radius:99px;font-size:13px;display:flex;align-items:center;gap:12px;opacity:0;pointer-events:none;transition:opacity 0.22s var(--ease),transform 0.28s var(--spring);z-index:7000;white-space:nowrap}
+.undo-toast.visible{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
+.undo-toast button{background:none;border:none;color:var(--purple-text);font-size:13px;font-weight:600;cursor:pointer;padding:0;font-family:inherit}
+/* ── EDIT MODAL ── */
+.edit-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0);z-index:8500;display:flex;align-items:flex-end;padding:0 16px 24px;pointer-events:none;transition:background 0.28s var(--ease)}
+.edit-modal-overlay.open{background:rgba(0,0,0,0.44);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:auto}
+.edit-modal{width:100%;max-width:430px;margin:0 auto;background:var(--bg);border-radius:20px;padding:20px;opacity:0;transform:translateY(30px) scale(0.96);transition:opacity 0.3s var(--ease),transform 0.36s var(--spring)}
+.edit-modal-overlay.open .edit-modal{opacity:1;transform:translateY(0) scale(1)}
+.edit-modal-bar{width:34px;height:4px;background:var(--border2);border-radius:99px;margin:0 auto 18px}
+.edit-modal-label{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:10px}
+.edit-modal-input{width:100%;border:0.5px solid var(--border2);background:var(--bg2);border-radius:var(--r-sm);padding:12px 14px;font-size:15px;color:var(--text);font-family:inherit;outline:none;margin-bottom:14px;transition:border-color 0.15s}
+.edit-modal-input:focus{border-color:var(--purple)}
+.edit-modal-btns{display:flex;gap:8px}
+.edit-cancel-btn{flex:1;padding:12px;background:var(--bg2);color:var(--text2);border:0.5px solid var(--border);border-radius:var(--r-sm);font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:all 0.15s var(--spring)}
+.edit-cancel-btn:active{opacity:0.7;transform:scale(0.97)}
+.edit-save-btn{flex:2;padding:12px;background:var(--green);color:#fff;border:none;border-radius:var(--r-sm);font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;transition:all 0.18s var(--spring)}
+.edit-save-btn:active{opacity:0.88;transform:scale(0.97)}
+/* ── HOME CLOCK WIDGET ── */
+.home-clock{position:absolute;top:52px;right:20px;text-align:right;pointer-events:none;z-index:1}
+.home-clock-time{font-family:'DM Mono',monospace;font-size:20px;font-weight:500;color:var(--text);letter-spacing:.04em;line-height:1.15}
+.home-clock-sub{font-size:10px;color:var(--text3);font-family:'DM Mono',monospace;margin-top:3px;white-space:nowrap}
+.page-header{position:relative}
+@media(prefers-color-scheme:light){.card,.task,.habit-card{box-shadow:0 1px 3px rgba(0,0,0,0.04)}}
+/* ── HABIT SWIPE-TO-DELETE ── */
+.habit-swipe-wrap{position:relative;overflow:hidden;border-radius:var(--r)}
+.habit-swipe-back{position:absolute;inset:0;background:#ff3b30;border-radius:var(--r);display:flex;align-items:center;justify-content:flex-end;padding-right:20px;pointer-events:none;opacity:0}
+.habit-swipe-icon{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.22);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform 0.18s var(--spring),background 0.18s}
+.habit-swipe-icon.armed{transform:scale(1.22);background:rgba(255,255,255,0.4)}
+/* ── EVENT SWIPE-TO-COMPLETE (agenda) ── */
+.event-swipe-wrap{position:relative;overflow:hidden;border-radius:var(--r)}
+.event-swipe-back{position:absolute;inset:0;background:#1a9268;border-radius:var(--r);display:flex;align-items:center;justify-content:flex-end;padding-right:20px;gap:8px;pointer-events:none;opacity:0}
+.event-swipe-lbl{font-size:11px;font-weight:600;color:rgba(255,255,255,0.85);letter-spacing:.05em;text-transform:uppercase;white-space:nowrap}
+.event-swipe-icon{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.22);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform 0.18s var(--spring),background 0.18s}
+.event-swipe-icon.armed{transform:scale(1.22);background:rgba(255,255,255,0.4)}
+</style>
+</head>
+<body>
+<canvas id="px"></canvas>
+<div class="app">
+  <div class="view-slider">
+    <div class="view is-active" id="view-home"></div>
+    <div class="view is-right"  id="view-agenda"></div>
+    <div class="view is-right"  id="view-journal"></div>
+    <div class="view is-right"  id="view-dash"></div>
+  </div>
+
+  <div class="timer-strip" id="timer-strip">
+    <div class="timer-left">
+      <div class="timer-display" id="t-display">25:00</div>
+      <div class="timer-mode-lbl" id="t-mode">Enfoque</div>
+    </div>
+    <div class="timer-chips">
+      <div class="timer-chip on" id="tc-25" onclick="setTimerMode(25,'Enfoque','tc-25')">25</div>
+      <div class="timer-chip"    id="tc-10" onclick="setTimerMode(10,'Cierre','tc-10')">10</div>
+      <div class="timer-chip"    id="tc-5"  onclick="setTimerMode(5,'Descanso','tc-5')">5</div>
+    </div>
+    <div class="timer-btns">
+      <button class="timer-btn" id="t-toggle" onclick="toggleTimer()">Iniciar</button>
+      <button class="timer-btn" onclick="resetTimer()">Reset</button>
+    </div>
+  </div>
+
+  <nav class="nav">
+    <button class="nav-item active" id="nav-home" onclick="go('home',0)">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/>
+      </svg>
+      <div class="nav-dot"></div>
+      <span class="nav-label">Hoy</span>
+    </button>
+    <button class="nav-item" id="nav-agenda" onclick="go('agenda',1)">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/>
+        <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/>
+      </svg>
+      <div class="nav-dot"></div>
+      <span class="nav-label">Agenda</span>
+    </button>
+    <button class="nav-item" id="nav-journal" onclick="go('journal',2)">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
+      </svg>
+      <div class="nav-dot"></div>
+      <span class="nav-label">Diario</span>
+    </button>
+    <button class="nav-item" id="nav-dash" onclick="go('dash',3)">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 20V10M12 20V4M6 20v-6"/>
+      </svg>
+      <div class="nav-dot"></div>
+      <span class="nav-label">Progreso</span>
+    </button>
+  </nav>
+
+  <!-- REFLECTION MODAL -->
+  <div class="refl-overlay" id="refl-overlay" onclick="if(event.target===this)window._closeReflModal()">
+    <div class="refl-modal" id="refl-modal">
+      <div class="refl-modal-bar"></div>
+      <div class="refl-modal-scroll" id="refl-modal-content"></div>
+      <div class="refl-modal-footer">
+        <button class="refl-ok-btn" id="refl-ok-btn" onclick="window._closeReflModal()">Perfecto</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="app.js"></script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>

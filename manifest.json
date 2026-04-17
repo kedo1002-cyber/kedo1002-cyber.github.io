@@ -1,0 +1,26 @@
+{
+  "name": "KEDO Brain",
+  "short_name": "KEDO Brain",
+  "description": "Tu sistema de productividad personal",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fafaf8",
+  "theme_color": "#fafaf8",
+  "lang": "es",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
