@@ -29,15 +29,19 @@
 .habit-add-mini{width:32px;height:32px;border-radius:var(--r-sm);border:0.5px solid var(--border2);background:var(--bg2);color:var(--text3);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.18s var(--spring)}
 .habit-add-mini:active{transform:scale(0.88);background:var(--purple-bg);color:var(--purple-text)}
 .habits-list{display:flex;flex-direction:column;gap:6px}
-.habit-card{display:flex;align-items:flex-start;gap:11px;padding:11px 13px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--r);cursor:pointer;transition:transform 0.15s var(--spring),opacity 0.25s,border-color 0.2s;position:relative;overflow:hidden}
+.habit-card{display:flex;align-items:flex-start;gap:11px;padding:11px 13px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--r);cursor:pointer;transition:transform 0.15s var(--spring),opacity 0.25s,border-color 0.2s,background 0.24s ease;position:relative;overflow:hidden}
 .habit-card:active{transform:scale(0.975)}
 .habit-card.done{background:var(--bg2)}
 .habit-card.done .habit-name{color:var(--text2)}
-@keyframes habit-complete{0%{transform:scale(1)}40%{transform:scale(1.05)}100%{transform:scale(1)}}
-.habit-card.habit-completing{animation:habit-complete 0.18s ease-out forwards;pointer-events:none}
+@keyframes habit-complete{0%{transform:scale(1)}30%{transform:scale(1.022)}60%{transform:scale(0.996)}100%{transform:scale(1)}}
+@keyframes habit-check-pop{0%{transform:scale(0.5);opacity:0.3}55%{transform:scale(1.3)}78%{transform:scale(0.9)}100%{transform:scale(1.05);opacity:1}}
+@keyframes habit-check-draw{from{stroke-dashoffset:18;opacity:0.2}to{stroke-dashoffset:0;opacity:1}}
+.habit-card.habit-completing{animation:habit-complete 0.36s cubic-bezier(0.34,1.56,0.64,1) forwards;pointer-events:none}
 .habit-left{flex-shrink:0;margin-top:1px}
 .habit-check{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--border2);display:flex;align-items:center;justify-content:center;transition:background 0.12s ease-out,border-color 0.12s ease-out,transform 0.12s ease-out}
 .habit-check.done{transform:scale(1.05)}
+.habit-check.popping{animation:habit-check-pop 0.34s cubic-bezier(0.34,1.56,0.64,1) forwards!important;transition:none!important}
+.habit-check.popping polyline{stroke-dasharray:18;stroke-dashoffset:18;animation:habit-check-draw 0.22s 0.12s ease-out forwards}
 .habit-icono{font-size:13px;line-height:1}
 .habit-body{flex:1;min-width:0}
 .habit-name-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px}

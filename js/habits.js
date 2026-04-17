@@ -284,6 +284,35 @@ export function initHabitSwipes() {
   document.querySelectorAll('.habit-swipe-wrap').forEach(_attachHabitSwipe);
 }
 
+/* ── UPDATE QUIRÚRGICO DEL RING ──
+   Actualiza el SVG en el DOM existente → dispara la transición CSS suave.
+   Llamar ANTES del re-render para que la animación sea visible. */
+function _updateRingSurgical() {
+  const today = todayStr();
+  const todayLog = habitLog[today] || {};
+  const doneCount  = habits.filter(h => !!todayLog[h.id]).length;
+  const totalCount = habits.length;
+  const ringPct  = totalCount > 0 ? Math.round(doneCount / totalCount * 100) : 0;
+  const allDone  = doneCount === totalCount;
+  const ringColor = allDone ? '#1a9268' : '#6c63d4';
+  const r = 17, circ = 2 * Math.PI * r;
+  const offset = circ - (ringPct / 100) * circ;
+
+  const circles = document.querySelectorAll('.habits-ring-wrap circle');
+  if (circles.length >= 2) {
+    /* forzar transición sincronizada con la animación del card (0.36s) */
+    circles[1].style.transition      = 'stroke-dashoffset 0.36s cubic-bezier(0.4,0,0.2,1)';
+    circles[1].style.strokeDashoffset = String(offset);
+    circles[1].setAttribute('stroke', ringColor);
+  }
+  const txt = document.querySelector('.habits-ring-wrap text');
+  if (txt) { txt.textContent = doneCount; txt.setAttribute('fill', ringColor); }
+  const sub = document.querySelector('.habits-sub');
+  if (sub) sub.textContent = `${doneCount}/${totalCount} · ${ringPct}%`;
+  const title = document.querySelector('.habits-title');
+  if (title) title.textContent = allDone ? 'Hábitos completados' : 'Hábitos de hoy';
+}
+
 /* ── REFRESH QUIRÚRGICO DE LA SECCIÓN DE HÁBITOS ──
    Solo reemplaza #habits-section sin tocar el resto del DOM.
    Elimina las clases pe/pe1-pe5 para no re-disparar animaciones de entrada. */
@@ -302,6 +331,9 @@ export function initHabitHandlers(renderHomeFn) {
     const wasCompleted = toggleHabitToday(id);
     const el = document.querySelector(`[data-hid="${id}"]`);
 
+    /* ── Ring: update quirúrgico inmediato → dispara transición CSS suave ── */
+    _updateRingSurgical();
+
     if (wasCompleted && el) {
       /* ── Feedback visual INMEDIATO — no espera el re-render ── */
       const h = habits.find(hb => hb.id === id);
@@ -310,9 +342,11 @@ export function initHabitHandlers(renderHomeFn) {
       const chk = el.querySelector('.habit-check');
       if (chk) {
         chk.classList.add('done');
-        chk.style.background   = color;
-        chk.style.borderColor  = color;
+        chk.style.background  = color;
+        chk.style.borderColor = color;
         chk.innerHTML = `<svg width="11" height="11" viewBox="0 0 11 11" fill="none"><polyline points="1.5,5.5 4.5,8.5 9.5,2.5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+        chk.classList.add('popping');
+        setTimeout(() => chk.classList.remove('popping'), 420);
       }
       /* ── Efectos ── */
       const r = el.getBoundingClientRect();
