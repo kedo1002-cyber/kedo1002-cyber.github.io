@@ -1,4 +1,4 @@
-const CACHE = 'kedo-brain-v11';
+const CACHE = 'kedo-brain-v12';
 const STATIC = [
   '/',
   '/index.html',
