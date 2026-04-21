@@ -1,4 +1,4 @@
-const CACHE = 'kedo-brain-v10';
+const CACHE = 'kedo-brain-v11';
 const STATIC = [
   '/',
   '/index.html',
@@ -36,25 +36,27 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   if (url.hostname === 'api.anthropic.com') return;
+
+  /* Navegación: cache-first → app arranca instantáneo sin esperar la red */
   if (e.request.mode === 'navigate') {
-    e.respondWith(fetch(e.request).catch(() => caches.match('/index.html')));
-    return;
-  }
-  /* JS/CSS: network-first — cambios siempre visibles */
-  if (url.pathname.endsWith('.js') || url.pathname.endsWith('.css')) {
     e.respondWith(
-      fetch(e.request).then(res => {
-        if (res.ok) { const clone = res.clone(); caches.open(CACHE).then(c => c.put(e.request, clone)); }
-        return res;
-      }).catch(() => caches.match(e.request))
+      caches.match('/index.html')
+        .then(cached => cached || fetch(e.request))
+        .catch(() => caches.match('/index.html'))
     );
     return;
   }
-  /* Resto: cache-first */
+
+  /* Todo lo demás: cache-first
+     El bump de CACHE en cada deploy garantiza que los archivos nuevos
+     se descarguen en la instalación del SW, no en cada apertura. */
   e.respondWith(
-    caches.match(e.request).then(cached => cached || fetch(e.request).then(res => {
-      if (res.ok) { const clone = res.clone(); caches.open(CACHE).then(c => c.put(e.request, clone)); }
-      return res;
-    }))
+    caches.match(e.request).then(cached => {
+      if (cached) return cached;
+      return fetch(e.request).then(res => {
+        if (res.ok) { const clone = res.clone(); caches.open(CACHE).then(c => c.put(e.request, clone)); }
+        return res;
+      });
+    })
   );
 });
