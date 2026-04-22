@@ -272,8 +272,12 @@ export function addEvent() {
   if (!tEl || !dEl) return;
   const text = tEl.value.trim(), date = dEl.value;
   if (!text || !date || date < todayStr()) return;
-  setEvents([...events, { id: 'e' + Date.now(), title: text, area: selEventArea, date }].sort((a,b) => a.date > b.date ? 1 : -1));
+  const startTime = document.getElementById('ev-start')?.value || '';
+  const endTime   = document.getElementById('ev-end')?.value   || '';
+  setEvents([...events, { id: 'e' + Date.now(), title: text, area: selEventArea, date, startTime, endTime }].sort((a,b) => a.date > b.date ? 1 : -1));
   save(); tEl.value = ''; dEl.value = '';
+  const sEl = document.getElementById('ev-start'), eEl = document.getElementById('ev-end');
+  if (sEl) sEl.value = ''; if (eEl) eEl.value = '';
   _renderView('agenda');
 }
 export function delEvent(id) { setEvents(events.filter(e => e.id !== id)); save(); _renderView('agenda'); }
@@ -302,12 +306,41 @@ export function renderTaskForm() {
     <div class="pill-group">${BLOCKS.map(b => `<span class="pill${selBlock===b.id?' sel-block':''}" data-bid="${b.id}" onclick="window._pickBlock('${b.id}')">${b.label}</span>`).join('')}</div>
     <button class="add-btn" onclick="window._addTask()">Agregar tarea</button>`;
 }
+window._onTimeChange = (inputId, lblId) => {
+  const v = document.getElementById(inputId)?.value;
+  const lbl = document.getElementById(lblId);
+  if (!lbl) return;
+  if (v) {
+    const [h, m] = v.split(':').map(Number);
+    lbl.textContent = `${h%12||12}:${String(m).padStart(2,'0')}${h>=12?'pm':'am'}`;
+    lbl.classList.add('set');
+  } else {
+    lbl.textContent = 'Sin hora';
+    lbl.classList.remove('set');
+  }
+};
+
 export function renderEventForm() {
   const el = document.getElementById('event-form-inner');
   if (!el) return;
   el.innerHTML = `
     <input class="form-input" id="ev-title" placeholder="Nombre del evento, examen..." onkeydown="if(event.key==='Enter')document.getElementById('ev-date')?.focus()">
     <input class="date-field" type="date" id="ev-date" min="${todayStr()}">
+    <div class="ev-when-wrap">
+      <div class="ev-when-row">
+        <span class="ev-when-lbl">Inicio</span>
+        <span class="ev-when-val" id="ev-start-lbl">Sin hora</span>
+        <span class="ev-when-chv">›</span>
+        <input type="time" id="ev-start" class="ev-when-input" onchange="window._onTimeChange('ev-start','ev-start-lbl')">
+      </div>
+      <div class="ev-when-sep"></div>
+      <div class="ev-when-row">
+        <span class="ev-when-lbl">Fin <span class="ev-when-opt">opcional</span></span>
+        <span class="ev-when-val" id="ev-end-lbl">Sin hora</span>
+        <span class="ev-when-chv">›</span>
+        <input type="time" id="ev-end" class="ev-when-input" onchange="window._onTimeChange('ev-end','ev-end-lbl')">
+      </div>
+    </div>
     <div class="pill-group" style="margin-bottom:10px">${AREAS.map(a => `<span class="pill" data-aid="${a.id}" style="${selEventArea===a.id?`background:${a.bg};border-color:${a.color};color:${a.tc};font-weight:500`:''}" onclick="window._pickEventArea('${a.id}')">${a.label}</span>`).join('')}</div>
     <button class="add-btn" onclick="window._addEvent()">Agregar evento</button>`;
 }

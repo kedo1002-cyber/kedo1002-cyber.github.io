@@ -7,7 +7,7 @@ import {
   tasks, thoughts, events, journals, habits,
   selArea, selBlock, _nightArea, _nightBlock,
   hour, blockId, todayStr, pad, getArea,
-  daysUntil, urgColor, esc, fmtShort,
+  daysUntil, urgColor, esc, fmtShort, fmtEvTime,
   setEvents, save,
   LDN, LMN, DN, MN, AREAS, BLOCKS, CHK,
 } from '../state.js';
@@ -61,7 +61,7 @@ function buildEventHint(nextEv) {
         <div class="event-hint-title">${esc(nextEv.title)}</div>
         <div class="event-hint-date">
           <span class="event-hint-area-pip" style="background:${_a.color}"></span>
-          ${esc(_a.label)} · ${fmtShort(nextEv.date)}
+          ${esc(_a.label)} · ${fmtShort(nextEv.date)}${nextEv.startTime ? `<span class="eh-time"> · ${fmtEvTime(nextEv.startTime, nextEv.endTime)}</span>` : ''}
         </div>
       </div>
       <div class="event-hint-arrow">›</div>

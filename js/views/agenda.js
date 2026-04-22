@@ -4,7 +4,7 @@
 
 import {
   events, tasks, hour, blockId, todayStr, getArea,
-  daysUntil, urgColor, esc, fmtLong, fmtShort,
+  daysUntil, urgColor, esc, fmtLong, fmtShort, fmtEvTime,
   AREAS, selEventArea,
 } from '../state.js';
 import { renderEventForm } from '../actions.js';
@@ -32,6 +32,7 @@ export function renderAgenda() {
         <div class="next-unit" style="color:${c}">${d===0?'¡Es hoy!':d===1?'día restante':'días restantes'}</div>
         <div class="next-title">${esc(next.title)}</div>
         <div class="next-meta"><div class="next-pip" style="background:${a.color}"></div><span class="next-date-str">${esc(a.label)} · ${fmtLong(next.date)}</span></div>
+        ${next.startTime ? `<div class="next-ev-time">${fmtEvTime(next.startTime, next.endTime)}</div>` : ''}
         <div class="urgency-track"><div class="urgency-fill" style="width:${upct}%;background:${c}"></div></div>
       </div>
     </div>`;
@@ -49,7 +50,7 @@ export function renderAgenda() {
           <div class="event-sep"></div>
           <div class="event-info">
             <div class="event-name">${esc(e.title)}</div>
-            <div class="event-sub"><div class="event-area-pip" style="background:${a.color}"></div><span class="event-date-lbl">${esc(a.label)} · ${fmtShort(e.date)}</span></div>
+            <div class="event-sub"><div class="event-area-pip" style="background:${a.color}"></div><span class="event-date-lbl">${esc(a.label)} · ${fmtShort(e.date)}${e.startTime ? ` · ${fmtEvTime(e.startTime, e.endTime)}` : ''}</span></div>
             <div class="event-ubar"><div class="event-ufill" style="width:${upct}%;background:${c}"></div></div>
           </div>
         </div>

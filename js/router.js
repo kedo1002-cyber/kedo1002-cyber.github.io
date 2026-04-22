@@ -3,7 +3,7 @@
    Navegación + Timer Pomodoro
    ═══════════════════════════════════════════════ */
 
-import { VIEWS, curView, curIdx, setCurView, setCurIdx, simHour, setSimHour, fmtT, pad } from './state.js';
+import { VIEWS, curView, curIdx, setCurView, setCurIdx, simHour, setSimHour, fmtT, pad, purgeExpiredEvents } from './state.js';
 import { renderHome }    from './views/home.js';
 import { renderAgenda }  from './views/agenda.js';
 import { renderJournal } from './views/journal.js';
@@ -110,8 +110,15 @@ document.addEventListener('visibilitychange', () => {
       notifyTimerEnd();
     }
     updateTimerDisplay();
+    /* al volver al foreground, purgar eventos vencidos */
+    if (purgeExpiredEvents()) renderView(curView);
   }
 });
+
+/* ── AUTO-PURGE EVENTOS POR HORA (cada 60 s) ── */
+setInterval(() => {
+  if (purgeExpiredEvents()) renderView(curView);
+}, 60000);
 
 /* ── EXPOSE GLOBALS ── */
 export function exposeRouterGlobals(setRenderViewFn) {

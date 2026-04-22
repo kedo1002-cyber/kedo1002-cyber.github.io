@@ -145,6 +145,15 @@ export const esc       = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g
     events = events.filter(e => e.date >= today);
     dirty = true;
   }
+  /* auto-archive today's events whose endTime has already passed */
+  const _now = new Date();
+  const currentTime = `${pad(_now.getHours())}:${pad(_now.getMinutes())}`;
+  const expiredByTime = events.filter(e => e.date === today && e.endTime && e.endTime < currentTime);
+  if (expiredByTime.length) {
+    expiredByTime.forEach(e => history.push({ ...e, archivedAt: today }));
+    events = events.filter(e => !(e.date === today && e.endTime && e.endTime < currentTime));
+    dirty = true;
+  }
   if (dirty) save();
 })();
 
@@ -155,6 +164,13 @@ export const LMN = ['enero','febrero','marzo','abril','mayo','junio','julio','ag
 
 export const fmtShort = ds => { const d = new Date(ds+'T12:00:00'); return `${DN[d.getDay()]} ${d.getDate()} ${MN[d.getMonth()]}`; };
 export const fmtLong  = ds => { const d = new Date(ds+'T12:00:00'); return `${LDN[d.getDay()]} ${d.getDate()} de ${LMN[d.getMonth()]}`; };
+
+/* Formatea hora "HH:MM" → "2:30pm"; si hay inicio y fin → "2:30pm – 4:00pm" */
+export const fmtEvTime = (start, end) => {
+  if (!start) return '';
+  const fmt = t => { const [h, m] = t.split(':').map(Number); return `${h%12||12}:${String(m).padStart(2,'0')}${h>=12?'pm':'am'}`; };
+  return end ? `${fmt(start)} – ${fmt(end)}` : fmt(start);
+};
 
 export const daysUntil = ds => {
   if (!ds || typeof ds !== 'string') return 999;
@@ -196,6 +212,19 @@ export function getHabitStreak(habitId) {
   }
   return streak;
 }
+/* ── EVENT TIME PURGE ── */
+export function purgeExpiredEvents() {
+  const today = todayStr();
+  const _now = new Date();
+  const currentTime = `${pad(_now.getHours())}:${pad(_now.getMinutes())}`;
+  const expired = events.filter(e => e.date === today && e.endTime && e.endTime < currentTime);
+  if (!expired.length) return false;
+  expired.forEach(e => history.push({ ...e, archivedAt: today }));
+  events = events.filter(e => !(e.date === today && e.endTime && e.endTime < currentTime));
+  save();
+  return true;
+}
+
 export function getHabitHistory7(habitId) {
   const result = [];
   const d = new Date();
