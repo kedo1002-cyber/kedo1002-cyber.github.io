@@ -8,10 +8,9 @@ import {
   setTasks, setThoughts, setHistory, setEvents, setJournals,
   selArea, selBlock, selEventArea, selMood,
   setSelArea, setSelBlock, setSelEventArea, setSelMood,
-  _nightArea, _nightBlock, setNightArea, setNightBlock,
   setReflToday,
   save, todayStr, pad, hour, blockId, getArea,
-  CHK, AREAS, BLOCKS, MOODS, LDN, LMN,
+  CHK, AREAS, BLOCKS, MOODS, LDN, LMN, DN, MN,
 } from './state.js';
 import { fireBurst } from './particles.js';
 import { buildReflection } from './reflection.js';
@@ -113,157 +112,288 @@ export function editTaskText(id, newText) {
   if (vh) vh.scrollTop = sy;
 }
 
-/* ── ADD TASK ── */
-export function addTask() {
-  const inp = document.getElementById('nti');
-  if (!inp) return;
-  const text = inp.value.trim();
-  if (!text) return;
-  setTasks([...tasks, { id: Date.now() + '', text, area: selArea, block: selBlock, done: false, date: todayStr() }]);
-  save();
-  _renderView('home');
+/* ═══════════════════════════════════════════════
+   PLAN DRAWER — FAB iOS bottom sheet
+   Reemplaza el viejo capture-box / plan nocturno.
+   ═══════════════════════════════════════════════ */
+/* Preset: 'today' | 'tomorrow' | 'd3' | 'd5' | 'd20' | 'custom' */
+let _pPreset = 'today';
+let _pCustomDs = null;   /* YYYY-MM-DD cuando _pPreset==='custom' */
+let _pBlock = 'morning'; /* se setea al abrir según hora actual */
+let _pArea = 'dian';
+
+/* Resolver fecha actual según preset */
+function _resolvePlanDs() {
+  const now = new Date();
+  const d = new Date(now);
+  if (_pPreset === 'today')   { /* misma fecha */ }
+  else if (_pPreset === 'tomorrow') d.setDate(d.getDate() + 1);
+  else if (_pPreset === 'd3') d.setDate(d.getDate() + 3);
+  else if (_pPreset === 'd5') d.setDate(d.getDate() + 5);
+  else if (_pPreset === 'd20') d.setDate(d.getDate() + 20);
+  else if (_pPreset === 'custom' && _pCustomDs) return _pCustomDs;
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 }
 
-/* ── THOUGHTS ── */
+/* Bloques deshabilitados SOLO cuando la fecha resuelve a hoy */
+function _disabledBlocksForToday() {
+  const ds = _resolvePlanDs();
+  if (ds !== todayStr()) return new Set(); /* futuro → todos habilitados */
+  const h = hour();
+  const cur = blockId(h);
+  /* tarde → bloquea mañana; noche → bloquea mañana + tarde */
+  if (cur === 'afternoon') return new Set(['morning']);
+  if (cur === 'night')     return new Set(['morning', 'afternoon']);
+  return new Set();
+}
+
+/* Ajustar _pBlock si el actual queda bloqueado por un cambio de fecha */
+function _ensureValidBlock() {
+  const dis = _disabledBlocksForToday();
+  if (dis.has(_pBlock)) {
+    /* saltar al primer bloque habilitado */
+    const first = BLOCKS.find(b => !dis.has(b.id));
+    if (first) _pBlock = first.id;
+  }
+}
+
+/* Formato corto de fecha para chip custom ("Mié 14 may") */
+function _fmtChipDate(ds) {
+  if (!ds) return '';
+  const d = new Date(ds + 'T12:00:00');
+  return `${DN[d.getDay()]} ${d.getDate()} ${MN[d.getMonth()]}`;
+}
+
+export function openPlanDrawer() {
+  /* defaults inteligentes cada vez que se abre */
+  const h = hour();
+  _pPreset = 'today';
+  _pCustomDs = null;
+  _pArea = 'dian';
+  /* bloque por defecto = bloque actual */
+  _pBlock = blockId(h);
+  _ensureValidBlock();
+
+  renderPlanDrawer();
+
+  const backdrop = document.getElementById('plan-backdrop');
+  const drawer   = document.getElementById('plan-drawer');
+  if (!backdrop || !drawer) return;
+  backdrop.classList.add('open');
+  /* doble RAF garantiza transición desde translateY(110%) */
+  requestAnimationFrame(() => requestAnimationFrame(() => drawer.classList.add('open')));
+  /* focus en input tras la animación */
+  setTimeout(() => document.getElementById('plan-inp')?.focus(), 380);
+  navigator.vibrate && navigator.vibrate(8);
+}
+
+export function closePlanDrawer() {
+  const backdrop = document.getElementById('plan-backdrop');
+  const drawer   = document.getElementById('plan-drawer');
+  if (!drawer || !backdrop) return;
+  /* blur input para cerrar teclado iOS */
+  document.getElementById('plan-inp')?.blur();
+  drawer.classList.remove('open');
+  drawer.style.transform = ''; /* limpiar drag transform inline */
+  backdrop.classList.remove('open');
+}
+
+/* ── renderPlanDrawer: solo se llama al ABRIR el drawer (render inicial) ─── */
+export function renderPlanDrawer() {
+  const body = document.getElementById('plan-drawer-body');
+  if (!body) return;
+
+  body.innerHTML = `
+    <input class="plan-input" id="plan-inp" placeholder="¿Qué vas a hacer?"
+      onkeydown="if(event.key==='Enter'){event.preventDefault();window._addDrawerTask()}">
+
+    <div class="plan-section-lbl">Cuándo</div>
+    <div class="plan-chip-row" id="plan-date-chips"></div>
+
+    <div class="plan-section-lbl">Bloque</div>
+    <div class="plan-chip-row" id="plan-block-chips"></div>
+
+    <div class="plan-section-lbl">Área</div>
+    <div class="plan-chip-row" id="plan-area-chips"></div>
+
+    <button class="plan-submit-btn" onclick="window._addDrawerTask()">Agregar tarea</button>
+  `;
+
+  _renderDateChips();
+  _renderBlockChips();
+  _renderAreaChips();
+}
+
+/* ── Actualizaciones quirúrgicas: NO tocan el input ─────────────────────── */
+function _renderDateChips() {
+  const el = document.getElementById('plan-date-chips');
+  if (!el) return;
+  const isCustom = _pPreset === 'custom';
+  /* solo 3 presets: Hoy, Mañana, Otro día */
+  const presets = [
+    { id: 'today',    label: 'Hoy'    },
+    { id: 'tomorrow', label: 'Mañana' },
+  ];
+  const dateChips = presets.map(p =>
+    `<button class="plan-chip${_pPreset===p.id?' sel':''}" onclick="window._pickDrawerPreset('${p.id}')">${p.label}</button>`
+  ).join('');
+  const customChip = `
+    <label class="plan-chip plan-chip-custom${isCustom?' has-date':''}" style="position:relative">
+      <span>${isCustom && _pCustomDs ? _fmtChipDate(_pCustomDs) : 'Otro día'}</span>
+      <span class="plan-chip-chv">›</span>
+      <input type="date" class="plan-date-input" min="${todayStr()}"
+        value="${_pCustomDs || ''}"
+        onchange="window._pickDrawerCustomDate(this.value)">
+    </label>`;
+  el.innerHTML = dateChips + customChip;
+}
+
+function _renderBlockChips() {
+  const el = document.getElementById('plan-block-chips');
+  if (!el) return;
+  const dis = _disabledBlocksForToday();
+  el.innerHTML = BLOCKS.map(b => {
+    const disabled = dis.has(b.id);
+    const sel = _pBlock === b.id && !disabled;
+    return `<button class="plan-chip${sel?' sel':''}${disabled?' disabled':''}"
+      ${disabled ? 'aria-disabled="true"' : `onclick="window._pickDrawerBlock('${b.id}')"`}>${b.label}</button>`;
+  }).join('');
+}
+
+function _renderAreaChips() {
+  const el = document.getElementById('plan-area-chips');
+  if (!el) return;
+  el.innerHTML = AREAS.map(a => {
+    const sel = _pArea === a.id;
+    const style = sel ? `background:${a.bg};color:${a.tc};border-color:${a.color};font-weight:600` : '';
+    return `<button class="plan-area-chip${sel?' sel':''}" style="${style}" onclick="window._pickDrawerArea('${a.id}')">${a.label}</button>`;
+  }).join('');
+}
+
+export function pickDrawerPreset(id) {
+  _pPreset = id;
+  if (id !== 'custom') _pCustomDs = null;
+  _ensureValidBlock();
+  _renderDateChips();
+  _renderBlockChips();   /* disabled state puede cambiar */
+}
+
+export function pickDrawerCustomDate(value) {
+  if (!value || value < todayStr()) return;
+  _pPreset = 'custom';
+  _pCustomDs = value;
+  _ensureValidBlock();
+  _renderDateChips();
+  _renderBlockChips();
+}
+
+export function pickDrawerBlock(id) {
+  const dis = _disabledBlocksForToday();
+  if (dis.has(id)) return;
+  _pBlock = id;
+  _renderBlockChips();
+}
+
+export function pickDrawerArea(id) {
+  _pArea = id;
+  _renderAreaChips();
+}
+
+export function addDrawerTask() {
+  const inp = document.getElementById('plan-inp');
+  if (!inp) return;
+  const text = inp.value.trim();
+  if (!text) {
+    inp.focus();
+    navigator.vibrate && navigator.vibrate([6, 40, 6]);
+    /* shake visual */
+    inp.style.transition = 'transform 0.28s var(--spring)';
+    inp.style.transform = 'translateX(-4px)';
+    setTimeout(() => { inp.style.transform = 'translateX(4px)'; }, 90);
+    setTimeout(() => { inp.style.transform = ''; }, 180);
+    return;
+  }
+  const ds = _resolvePlanDs();
+  setTasks([...tasks, {
+    id: 't' + Date.now(),
+    text,
+    area: _pArea,
+    block: _pBlock,
+    done: false,
+    date: ds,
+  }]);
+  save();
+  navigator.vibrate && navigator.vibrate(14);
+  closePlanDrawer();
+  /* re-render home tras el close anim para que aparezca la tarea */
+  setTimeout(() => _renderView('home'), 60);
+}
+
+/* ── SWIPE DOWN TO CLOSE DRAWER ── */
+let _dragState = { on: false, startY: 0, dy: 0, drawer: null };
+
+export function initPlanDrawerSwipe() {
+  const handle = document.getElementById('plan-handle-wrap');
+  const drawer = document.getElementById('plan-drawer');
+  if (!handle || !drawer) return;
+
+  const onStart = (e) => {
+    if (!drawer.classList.contains('open')) return;
+    const t = e.touches ? e.touches[0] : e;
+    _dragState = { on: true, startY: t.clientY, dy: 0, drawer };
+    drawer.classList.add('dragging');
+  };
+  const onMove = (e) => {
+    if (!_dragState.on) return;
+    const t = e.touches ? e.touches[0] : e;
+    const dy = t.clientY - _dragState.startY;
+    _dragState.dy = dy;
+    if (dy > 0) {
+      drawer.style.transform = `translateY(${dy}px)`;
+      /* fade backdrop con el drag */
+      const bd = document.getElementById('plan-backdrop');
+      if (bd) bd.style.opacity = String(Math.max(1 - dy / 320, 0.15));
+    }
+  };
+  const onEnd = () => {
+    if (!_dragState.on) return;
+    const dy = _dragState.dy;
+    _dragState = { on: false, startY: 0, dy: 0, drawer: null };
+    drawer.classList.remove('dragging');
+    const bd = document.getElementById('plan-backdrop');
+    if (bd) bd.style.opacity = '';
+    if (dy > 110) {
+      closePlanDrawer();
+    } else {
+      drawer.style.transform = '';
+    }
+  };
+
+  handle.addEventListener('touchstart', onStart, { passive: true });
+  handle.addEventListener('touchmove',  onMove,  { passive: true });
+  handle.addEventListener('touchend',   onEnd);
+  handle.addEventListener('touchcancel',onEnd);
+}
+
+/* ── THOUGHTS (Ideas de hoy — ahora viven en Diario, 24/7) ── */
 export function saveThought() {
-  const inp = document.getElementById('cap-ta');
+  const inp = document.getElementById('journal-cap-ta');
   if (!inp) return;
   const text = inp.value.trim();
   if (!text) return;
-  setThoughts([...thoughts, { id: Date.now() + '', text, date: todayStr() }]);
+  setThoughts([...thoughts, { id: 'th' + Date.now(), text, date: todayStr() }]);
   inp.value = '';
+  inp.style.height = '';
+  const btn = document.getElementById('journal-cap-send');
+  if (btn) btn.classList.remove('ready');
   save();
-  _renderView('home');
+  _renderView('journal');
 }
 
 export function delThought(id) {
   setThoughts(thoughts.filter(t => t.id !== id));
   save();
-  _renderView('home');
-}
-
-/* ── AREA / BLOCK SELECTORS ── */
-export function pickArea(id) {
-  setSelArea(id);
-  const form = document.getElementById('task-form');
-  if (!form) { renderTaskForm(); return; }
-  form.querySelectorAll('.pill[data-aid]').forEach(pill => {
-    const a = getArea(pill.dataset.aid);
-    const sel = pill.dataset.aid === id;
-    pill.style.background  = sel ? a.bg    : '';
-    pill.style.borderColor = sel ? a.color : '';
-    pill.style.color       = sel ? a.tc    : '';
-    pill.style.fontWeight  = sel ? '500'   : '';
-  });
-}
-export function pickBlock(id) {
-  setSelBlock(id);
-  const form = document.getElementById('task-form');
-  if (!form) { renderTaskForm(); return; }
-  form.querySelectorAll('.pill[data-bid]').forEach(pill => {
-    pill.classList.toggle('sel-block', pill.dataset.bid === id);
-  });
-}
-
-/* ── NIGHT PLANNER ── */
-export function pickNightArea(id) {
-  setNightArea(id);
-  document.querySelectorAll('.area-chip').forEach(c => {
-    const a = getArea(c.dataset.aid);
-    const isSel = c.dataset.aid === id;
-    c.classList.toggle('sel', isSel);
-    c.style.background   = isSel ? a.bg   : '';
-    c.style.color        = isSel ? a.tc   : '';
-    c.style.borderColor  = isSel ? a.color : '';
-  });
-}
-export function pickNightBlock(id) {
-  setNightBlock(id);
-  document.querySelectorAll('.block-seg').forEach(s => s.classList.toggle('sel', s.dataset.bid === id));
-}
-/* Fecha de planificación nocturna: si ya pasó la medianoche (0–5h), "mañana" = hoy */
-function nightPlanDs() {
-  const now = new Date(), tm = new Date(now);
-  if (now.getHours() >= 6) tm.setDate(tm.getDate() + 1);
-  return `${tm.getFullYear()}-${pad(tm.getMonth()+1)}-${pad(tm.getDate())}`;
-}
-export function addNightTask() {
-  const inp = document.getElementById('plan-inp');
-  if (!inp) return;
-  const text = inp.value.trim();
-  if (!text) return;
-  const ds = nightPlanDs();
-  setTasks([...tasks, { id: 't' + Date.now(), text, area: _nightArea, block: _nightBlock, done: false, date: ds }]);
-  inp.value = '';
-  save();
-  updatePlannedList();
-  navigator.vibrate && navigator.vibrate(12);
-}
-export function updatePlannedList() {
-  const el = document.getElementById('planned-list');
-  if (!el) return;
-  const ds = nightPlanDs();
-  const planned = tasks.filter(t => t.date === ds);
-  if (!planned.length) { el.innerHTML = ''; return; }
-  el.innerHTML = planned.map(t => {
-    const a = getArea(t.area);
-    const bLbl = ({ morning:'Mañana', afternoon:'Tarde', night:'Noche' })[t.block] || t.block;
-    return `<div class="planned-item" data-pid="${t.id}">
-      <div class="planned-item-pip" style="background:${a.color}"></div>
-      <span class="planned-item-txt">${t.text}</span>
-      <span class="planned-item-block">${bLbl}</span>
-      <span class="planned-item-del" onclick="window._delPlanned('${t.id}',this)">×</span>
-    </div>`;
-  }).join('');
-}
-export function delPlanned(id, btn) {
-  const item = btn?.closest('.planned-item');
-  if (item) {
-    if (item.dataset.deleting) return;
-    item.dataset.deleting = '1';
-    item.style.transition = 'opacity 0.18s,transform 0.18s';
-    item.style.opacity = '0'; item.style.transform = 'scale(0.94)';
-    setTimeout(() => { setTasks(tasks.filter(t => t.id !== id)); save(); updatePlannedList(); }, 200);
-  } else { setTasks(tasks.filter(t => t.id !== id)); save(); updatePlannedList(); }
-}
-
-export function saveCapture2() {
-  const inp = document.getElementById('ideas-ta');
-  if (!inp) return;
-  const text = inp.value.trim();
-  if (!text) return;
-  setThoughts([...thoughts, { id: 'th' + Date.now(), text, date: todayStr() }]);
-  inp.value = ''; inp.style.height = '';
-  const btn = document.getElementById('ideas-send');
-  if (btn) btn.classList.remove('ready');
-  save(); updateThoughtsList();
-}
-export function updateThoughtsList() {
-  const el = document.getElementById('thought-chips');
-  if (!el) return;
-  const today = todayStr();
-  const ts = thoughts.filter(t => t.date === today);
-  if (!ts.length) { el.innerHTML = ''; return; }
-  el.innerHTML = ts.map(th => `
-    <div class="thought-chip" data-thid="${th.id}">
-      <span class="thought-chip-txt">${th.text}</span>
-      <span class="thought-chip-x" onclick="window._delThought2('${th.id}',this)">
-        <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
-          <line x1="1.5" y1="1.5" x2="6.5" y2="6.5" stroke="var(--text3)" stroke-width="1.5" stroke-linecap="round"/>
-          <line x1="6.5" y1="1.5" x2="1.5" y2="6.5" stroke="var(--text3)" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
-      </span>
-    </div>`).join('');
-}
-export function delThought2(id, btn) {
-  const chip = btn?.closest('.thought-chip');
-  if (chip) {
-    if (chip.dataset.deleting) return;
-    chip.dataset.deleting = '1';
-    chip.style.transition = 'opacity 0.18s,transform 0.18s';
-    chip.style.opacity = '0'; chip.style.transform = 'scale(0.82)';
-    setTimeout(() => { setThoughts(thoughts.filter(t => t.id !== id)); save(); updateThoughtsList(); }, 185);
-  } else { setThoughts(thoughts.filter(t => t.id !== id)); save(); updateThoughtsList(); }
+  _renderView('journal');
 }
 
 /* ── EVENTS ── */
@@ -296,16 +426,7 @@ export function pickEventArea(id) {
   });
 }
 
-/* ── FORM RENDERERS ── */
-export function renderTaskForm() {
-  const el = document.getElementById('task-form');
-  if (!el) return;
-  el.innerHTML = `
-    <input class="form-input" id="nti" placeholder="¿Qué vas a hacer?" onkeydown="if(event.key==='Enter')window._addTask()">
-    <div class="pill-group">${AREAS.map(a => `<span class="pill" data-aid="${a.id}" style="${selArea===a.id?`background:${a.bg};border-color:${a.color};color:${a.tc};font-weight:500`:''}" onclick="window._pickArea('${a.id}')">${a.label}</span>`).join('')}</div>
-    <div class="pill-group">${BLOCKS.map(b => `<span class="pill${selBlock===b.id?' sel-block':''}" data-bid="${b.id}" onclick="window._pickBlock('${b.id}')">${b.label}</span>`).join('')}</div>
-    <button class="add-btn" onclick="window._addTask()">Agregar tarea</button>`;
-}
+/* ── EVENT FORM (agenda) ── */
 window._onTimeChange = (inputId, lblId) => {
   const v = document.getElementById(inputId)?.value;
   const lbl = document.getElementById(lblId);
@@ -613,24 +734,25 @@ window._undoDelete = (tid) => {
 
 /* ── EXPOSE GLOBALS ── */
 export function exposeGlobals() {
-  window._toggleTask       = toggleTask;
-  window._addTask          = addTask;
-  window._pickArea         = pickArea;
-  window._pickBlock        = pickBlock;
-  window._pickNightArea    = pickNightArea;
-  window._pickNightBlock   = pickNightBlock;
-  window._addNightTask     = addNightTask;
-  window._delPlanned       = delPlanned;
-  window._saveCapture2     = saveCapture2;
-  window._delThought2      = delThought2;
-  window._addEvent         = addEvent;
-  window._delEvent         = delEvent;
-  window._pickEventArea    = pickEventArea;
-  window._pickMood         = pickMood;
-  window._generateRefl     = generateReflection;
-  window._closeReflModal   = closeReflModal;
-  window.openReflModal     = openReflModal;
-  window._openPastRefl     = openPastRefl;
-  window._saveThought      = saveThought;
-  window._delThought       = delThought;
+  window._toggleTask         = toggleTask;
+  /* Plan drawer */
+  window._openPlanDrawer     = openPlanDrawer;
+  window._closePlanDrawer    = closePlanDrawer;
+  window._pickDrawerPreset   = pickDrawerPreset;
+  window._pickDrawerCustomDate = pickDrawerCustomDate;
+  window._pickDrawerBlock    = pickDrawerBlock;
+  window._pickDrawerArea     = pickDrawerArea;
+  window._addDrawerTask      = addDrawerTask;
+  /* Events */
+  window._addEvent           = addEvent;
+  window._delEvent           = delEvent;
+  window._pickEventArea      = pickEventArea;
+  /* Journal */
+  window._pickMood           = pickMood;
+  window._generateRefl       = generateReflection;
+  window._closeReflModal     = closeReflModal;
+  window.openReflModal       = openReflModal;
+  window._openPastRefl       = openPastRefl;
+  window._saveThought        = saveThought;
+  window._delThought         = delThought;
 }

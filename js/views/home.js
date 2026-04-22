@@ -4,15 +4,14 @@
    ═══════════════════════════════════════════════ */
 
 import {
-  tasks, thoughts, events, journals, habits,
-  selArea, selBlock, _nightArea, _nightBlock,
+  tasks, events, journals,
   hour, blockId, todayStr, pad, getArea,
   daysUntil, urgColor, esc, fmtShort, fmtEvTime,
   setEvents, save,
-  LDN, LMN, DN, MN, AREAS, BLOCKS, CHK,
+  LDN, LMN, CHK,
 } from '../state.js';
 import { renderHabitsSection, initHabitHandlers, initHabitSwipes } from '../habits.js';
-import { initTaskGestures, updatePlannedList, updateThoughtsList } from '../actions.js';
+import { initTaskGestures } from '../actions.js';
 
 let _ehBoundEl = null, _ehX = 0, _ehY = 0, _ehEl = null;
 let _ehOn = false, _ehLocked = false, _ehFired = false, _ehLastDx = 0;
@@ -79,7 +78,7 @@ export function renderHome() {
   const greets = {
     morning:   ['Buenos días', 'Aquí están tus tareas de esta mañana.'],
     afternoon: ['Buenas tardes', 'Una a la vez. Enfócate.'],
-    night:     ['Buenas noches', 'Planea mañana. Captura lo de hoy.'],
+    night:     ['Buenas noches', 'Cierra el día. Planea el siguiente.'],
   };
   const [gt, gs] = greets[bl];
   const nextEv = [...events].sort((a,b) => a.date > b.date ? 1 : -1)[0] || null;
@@ -115,106 +114,20 @@ export function renderHome() {
           <div class="empty">
             <div class="empty-ring"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="var(--text3)" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="8"/><polyline points="7,10 9,12 13,8"/></svg></div>
             <div class="empty-title">Todo en orden</div>
-            <div class="empty-sub">Sin tareas para este bloque.<br>Agrégalas esta noche.</div>
+            <div class="empty-sub">Sin tareas para este bloque.<br>Toca el botón + para agregar.</div>
           </div>`}
       </div>
       ${total ? `<div class="progress-wrap ${pe}" data-block="${b.id}"><div class="prog-track"><div class="prog-fill" style="width:${pct}%"></div></div><span class="prog-txt">${done}/${total}</span></div>` : ''}`;
     }).filter(Boolean).join('');
   }
 
-  if (bl === 'night') {
-    const hasRefl  = !!journals.find(j => j.date === todayStr());
-    const nt       = tasks.filter(t => t.block === 'night' && t.date === todayStr());
-    const done     = nt.filter(t => t.done).length, total = nt.length;
-    const pct      = total ? Math.round(done / total * 100) : 0;
-    const dayBlocksHTML = _buildDayBlocksHTML('night');
-    /* si ya pasó medianoche (0–5h), "mañana" = hoy — mismo criterio que addNightTask */
-    const _tnow = new Date(), _ttm = new Date(_tnow);
-    if (_tnow.getHours() >= 6) _ttm.setDate(_ttm.getDate() + 1);
-    const tmDs     = `${_ttm.getFullYear()}-${pad(_ttm.getMonth()+1)}-${pad(_ttm.getDate())}`;
-    const planned  = tasks.filter(t => t.date === tmDs);
-    const todayTh  = thoughts.filter(t => t.date === todayStr());
-
-    const arrowSvg = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6h8M6 2l4 4-4 4"/></svg>`;
-    const plusSvg  = `<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><line x1="8" y1="2" x2="8" y2="14" stroke="white" stroke-width="1.8" stroke-linecap="round"/><line x1="2" y1="8" x2="14" y2="8" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg>`;
-    const upSvg    = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><line x1="7" y1="12" x2="7" y2="2" stroke="white" stroke-width="1.8" stroke-linecap="round"/><polyline points="3,6 7,2 11,6" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-
-    const nightContent = hasRefl ? `
-      <div class="section-label pe pe4">Planear mañana</div>
-      <div class="plan-wrap pe pe4">
-        <div class="plan-input-row">
-          <input class="plan-input" id="plan-inp" placeholder="¿Qué harás mañana?" onkeydown="if(event.key==='Enter')window._addNightTask()">
-          <button class="plan-add-btn" onclick="window._addNightTask()">${plusSvg}</button>
-        </div>
-        <div class="area-chips">
-          ${AREAS.map(a => `<span class="area-chip${_nightArea===a.id?' sel':''}" data-aid="${a.id}" onclick="window._pickNightArea('${a.id}')" style="${_nightArea===a.id?`background:${a.bg};color:${a.tc};border-color:${a.color}`:''}">${a.label}</span>`).join('')}
-        </div>
-        <div class="block-segs">
-          ${BLOCKS.map(b => `<div class="block-seg${_nightBlock===b.id?' sel':''}" data-bid="${b.id}" onclick="window._pickNightBlock('${b.id}')">${b.label}</div>`).join('')}
-        </div>
-        <div class="planned-list" id="planned-list">
-          ${planned.map(t => {
-            const a = getArea(t.area);
-            const bLbl = { morning:'Mañana', afternoon:'Tarde', night:'Noche' }[t.block] || t.block;
-            return `<div class="planned-item" data-pid="${t.id}">
-              <div class="planned-item-pip" style="background:${a.color}"></div>
-              <span class="planned-item-txt">${esc(t.text)}</span>
-              <span class="planned-item-block">${bLbl}</span>
-              <span class="planned-item-del" onclick="window._delPlanned('${t.id}',this)">×</span>
-            </div>`;
-          }).join('')}
-        </div>
-      </div>
-      <div class="section-label pe pe5">Ideas de hoy</div>
-      <div class="ideas-wrap pe pe5">
-        <div class="ideas-ta-row">
-          <textarea class="ideas-ta" id="ideas-ta" placeholder="Anota cualquier idea..." rows="1"
-            oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px';document.getElementById('ideas-send').classList.toggle('ready',this.value.trim().length>0)"></textarea>
-          <button class="ideas-send" id="ideas-send" onclick="window._saveCapture2()">${upSvg}</button>
-        </div>
-        <div class="thought-chips" id="thought-chips">
-          ${todayTh.map(th => `
-            <div class="thought-chip" data-thid="${th.id}">
-              <span class="thought-chip-txt">${esc(th.text)}</span>
-              <span class="thought-chip-x" onclick="window._delThought2('${th.id}',this)">
-                <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
-                  <line x1="1.5" y1="1.5" x2="6.5" y2="6.5" stroke="var(--text3)" stroke-width="1.5" stroke-linecap="round"/>
-                  <line x1="6.5" y1="1.5" x2="1.5" y2="6.5" stroke="var(--text3)" stroke-width="1.5" stroke-linecap="round"/>
-                </svg>
-              </span>
-            </div>`).join('')}
-        </div>
-      </div>` : `
-      <div class="night-gate pe pe4">
-        <div class="night-gate-icon">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="var(--text3)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="9" width="12" height="9" rx="2"/><path d="M7 9V6a3 3 0 016 0v3"/></svg>
-        </div>
-        <div class="night-gate-title">Planeación bloqueada</div>
-        <div class="night-gate-sub">Completa tu reflexión del día<br>para desbloquear este espacio.</div>
-        <button class="night-gate-btn" onclick="go('journal',2)">Ir a Diario ${arrowSvg}</button>
-      </div>`;
-
-    el.innerHTML = `
-      <div class="page-header pe">${_wm}<div class="page-title">${gt}</div><div class="page-sub">${gs}</div><div class="page-date">${dateStr}</div></div>
-      ${evHint}
-      ${habitsHTML}
-      ${dayBlocksHTML}
-      ${nightContent}
-      <div style="height:24px"></div>`;
-  } else {
-    const dayBlocksHTML = _buildDayBlocksHTML(bl);
-    el.innerHTML = `
-      <div class="page-header pe">${_wm}<div class="page-title">${gt}</div><div class="page-sub">${gs}</div><div class="page-date">${dateStr}</div></div>
-      ${evHint}
-      ${habitsHTML}
-      ${dayBlocksHTML}
-      <div class="capture-box pe pe6">
-        <div class="capture-top"><span class="capture-label">Captura rápida</span></div>
-        <textarea class="capture-ta" id="cap-ta" placeholder="Anota cualquier idea..." rows="2"></textarea>
-        <div class="capture-footer"><span class="capture-save" onclick="window._saveThought()">Guardar</span></div>
-      </div>
-      <div style="height:20px"></div>`;
-  }
+  const dayBlocksHTML = _buildDayBlocksHTML(bl);
+  el.innerHTML = `
+    <div class="page-header pe">${_wm}<div class="page-title">${gt}</div><div class="page-sub">${gs}</div><div class="page-date">${dateStr}</div></div>
+    ${evHint}
+    ${habitsHTML}
+    ${dayBlocksHTML}
+    <div style="height:100px"></div>`;
 
   /* gestos táctiles en tareas — init en todos los bloques visibles */
   document.querySelectorAll('#view-home .tasks-container[data-block]').forEach(c => initTaskGestures(c));
@@ -225,7 +138,6 @@ export function renderHome() {
 
   /* event hint swipe — doble RAF garantiza que el browser ya pintó el DOM */
   requestAnimationFrame(() => requestAnimationFrame(initEventHintSwipe));
-
 }
 
 /* ── EVENT HINT SWIPE ── */

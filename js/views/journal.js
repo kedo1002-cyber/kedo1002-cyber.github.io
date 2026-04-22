@@ -1,62 +1,82 @@
 /* ═══════════════════════════════════════════════
    KEDO BRAIN v2 — views/journal.js
+   Diario unificado: Ideas 24/7 + Reflexión opcional
    ═══════════════════════════════════════════════ */
 
 import {
-  tasks, journals, selMood,
-  hour, blockId, todayStr,
+  tasks, thoughts, journals, selMood,
+  todayStr,
   setReflToday, esc,
-  MOODS, DN, MN, LDN, LMN,
+  MOODS, DN, MN,
 } from '../state.js';
-import { pickMood, generateReflection, openReflModal, openPastRefl } from '../actions.js';
+import { openReflModal, openPastRefl } from '../actions.js';
+
+const upSvg = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><line x1="7" y1="12" x2="7" y2="2" stroke="white" stroke-width="1.8" stroke-linecap="round"/><polyline points="3,6 7,2 11,6" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
 export function renderJournal() {
-  const el      = document.getElementById('view-journal');
-  const isNight = blockId(hour()) === 'night';
-  const today   = todayStr();
+  const el       = document.getElementById('view-journal');
+  const today    = todayStr();
   const existing = journals.find(j => j.date === today) || null;
   const past     = journals.filter(j => j.date !== today).slice(0, 7);
   const todayTasks = tasks.filter(t => t.date === today);
   const todayDone  = todayTasks.filter(t => t.done).length;
   const todayTotal = todayTasks.length;
   const pct        = todayTotal ? Math.round(todayDone / todayTotal * 100) : 0;
+  const todayTh    = thoughts.filter(t => t.date === today);
 
   setReflToday(existing || null);
 
-  let h = `<div class="page-header pe"><div class="page-title">Diario</div><div class="page-sub">Cierra el día con honestidad.</div></div>`;
+  let h = `<div class="page-header pe"><div class="page-title">Diario</div><div class="page-sub">Captura ideas y cierra el día.</div></div>`;
 
-  if (isNight) {
-    const btnHtml = existing
-      ? `<button class="gen-btn is-view pe pe4" id="gen-btn" onclick="openReflModal(window._reflToday)">Ver reflexión</button>`
-      : `<button class="gen-btn pe pe4" id="gen-btn" onclick="window._generateRefl()" ${selMood ? '' : 'disabled'}>Generar reflexión</button>`;
+  /* ── IDEAS DE HOY — siempre visible, 24/7 ── */
+  h += `
+    <div class="section-label pe pe1">Ideas de hoy</div>
+    <div class="ideas-wrap pe pe1">
+      <div class="ideas-ta-row">
+        <textarea class="ideas-ta" id="journal-cap-ta" placeholder="Anota cualquier idea..." rows="1"
+          oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px';document.getElementById('journal-cap-send').classList.toggle('ready',this.value.trim().length>0)"></textarea>
+        <button class="ideas-send" id="journal-cap-send" onclick="window._saveThought()">${upSvg}</button>
+      </div>
+      <div class="thought-chips" id="journal-thought-chips">
+        ${todayTh.map(th => `
+          <div class="thought-chip" data-thid="${th.id}">
+            <span class="thought-chip-txt">${esc(th.text)}</span>
+            <span class="thought-chip-x" onclick="window._delThought('${th.id}')">
+              <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+                <line x1="1.5" y1="1.5" x2="6.5" y2="6.5" stroke="var(--text3)" stroke-width="1.5" stroke-linecap="round"/>
+                <line x1="6.5" y1="1.5" x2="1.5" y2="6.5" stroke="var(--text3)" stroke-width="1.5" stroke-linecap="round"/>
+              </svg>
+            </span>
+          </div>`).join('')}
+      </div>
+    </div>`;
 
-    h += `
-    <div class="section-label pe pe1">¿Cómo estuvo el día?</div>
-    <div class="mood-grid pe pe1">
+  /* ── REFLEXIÓN — siempre visible, opcional ── */
+  const btnHtml = existing
+    ? `<button class="gen-btn is-view pe pe4" id="gen-btn" onclick="openReflModal(window._reflToday)">Ver reflexión</button>`
+    : `<button class="gen-btn pe pe4" id="gen-btn" onclick="window._generateRefl()" ${selMood ? '' : 'disabled'}>Generar reflexión</button>`;
+
+  h += `
+    <div class="section-label pe pe2" style="margin-top:18px">¿Cómo estuvo el día?</div>
+    <div class="mood-grid pe pe2">
       ${MOODS.map(m => `<div class="mood-btn${selMood===m.id?' sel':''}" data-mood="${m.id}" onclick="window._pickMood('${m.id}')"><span class="mood-face">${m.face}</span><span class="mood-word">${m.word}</span></div>`).join('')}
     </div>
-    <div class="section-label pe pe2">Journal libre</div>
-    <div class="journal-field-wrap pe pe2">
+    <div class="section-label pe pe3">Journal libre</div>
+    <div class="journal-field-wrap pe pe3">
       <textarea class="journal-field" id="journal-text" placeholder="¿Qué pesó? ¿Qué fluyó? Sin filtros.">${existing?.journalText || ''}</textarea>
     </div>
     <div class="journal-field-wrap pe pe3" style="margin-bottom:10px">
       <textarea class="journal-field" id="dream-text" placeholder="¿Qué sueños o metas tienes en mente?" style="min-height:64px">${existing?.dreamText || ''}</textarea>
     </div>
-    <div class="task-summary pe pe3">
+    <div class="task-summary pe pe4">
       <span class="task-summary-lbl">Tareas completadas hoy</span>
       <span class="task-summary-val">${todayDone}/${todayTotal} · ${pct}%</span>
     </div>
     ${btnHtml}`;
-  } else {
-    h += `<div class="readonly-note pe pe1" style="margin:0 14px 16px"><p>El diario se activa en la noche — tu ritual de cierre antes de dormir.</p></div>`;
-    if (existing) {
-      h += `<button class="gen-btn is-view pe pe2" style="margin-bottom:8px" onclick="openReflModal(window._reflToday)">Ver reflexión de hoy</button>`;
-    }
-  }
 
   if (past.length) {
     h += `
-    <div class="section-label pe pe4" style="${isNight ? 'margin-top:16px' : ''}">Entradas anteriores</div>
+    <div class="section-label pe pe4" style="margin-top:16px">Entradas anteriores</div>
     <div class="card pe pe5"><div class="card-inner">
       ${past.map(j => {
         const m   = MOODS.find(x => x.id === j.mood) || MOODS[1];
@@ -77,7 +97,7 @@ export function renderJournal() {
   el.innerHTML = h;
 
   /* restaurar mood si ya existe entrada de hoy */
-  if (existing && isNight) {
+  if (existing) {
     document.querySelectorAll('.mood-btn').forEach(b => b.classList.toggle('sel', b.dataset.mood === existing.mood));
   }
 
