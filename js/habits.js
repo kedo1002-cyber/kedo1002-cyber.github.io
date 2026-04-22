@@ -339,6 +339,8 @@ export function initHabitHandlers(renderHomeFn) {
       const h = habits.find(hb => hb.id === id);
       const color = h?.color || '#6c63d4';
       el.classList.add('done');
+
+      /* ── Check circle: spring pop ── */
       const chk = el.querySelector('.habit-check');
       if (chk) {
         chk.classList.add('done');
@@ -348,16 +350,37 @@ export function initHabitHandlers(renderHomeFn) {
         chk.classList.add('popping');
         setTimeout(() => chk.classList.remove('popping'), 420);
       }
+
+      /* ── Barra de progreso: update quirúrgico → dispara transición CSS fluida ── */
+      const fill  = el.querySelector('.habit-prog-fill');
+      const lbl   = el.querySelector('.habit-prog-lbl');
+      const badge = el.querySelector('.habit-21-badge');
+      if (fill && h) {
+        const streak  = getHabitStreak(id);
+        const GOAL    = 21;
+        const newPct  = Math.min(Math.round(streak / GOAL * 100), 100);
+        const daysLeft = Math.max(GOAL - streak, 0);
+        const s = streak !== 1 ? 's' : '';
+        const formed  = streak >= GOAL;
+        fill.style.width      = newPct + '%';
+        fill.style.background = formed ? '#1a9268' : color;
+        if (lbl) lbl.innerHTML = formed
+          ? `<span style="color:#1a9268;font-weight:500">¡Hábito formado! Llevas ${streak} días</span>`
+          : streak > 0
+            ? `${streak} día${s} seguido${s} · <span style="color:${color};font-weight:500">Faltan ${daysLeft}</span>`
+            : `Empieza hoy · <span style="color:${color};font-weight:500">Faltan ${GOAL}</span>`;
+        if (badge) { badge.style.color = formed ? '#1a9268' : color; badge.textContent = formed ? `✓ ${streak}d` : `${streak}/${GOAL}`; }
+      }
+
       /* ── Efectos ── */
       const r = el.getBoundingClientRect();
       fireBurst(r.left + r.width / 2, r.top + r.height / 2, 'habit');
       navigator.vibrate && navigator.vibrate([8, 40, 12]);
-      /* ── Animación rápida → luego re-render para ring/stats ── */
+
+      /* ── Card bounce — re-render después de que la barra termine (0.48s) ── */
       el.classList.add('habit-completing');
-      el.addEventListener('animationend', () => {
-        el.classList.remove('habit-completing');
-        _refreshHabitsSection();
-      }, { once: true });
+      el.addEventListener('animationend', () => el.classList.remove('habit-completing'), { once: true });
+      setTimeout(_refreshHabitsSection, 480);
       return;
     }
 
