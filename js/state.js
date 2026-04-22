@@ -179,6 +179,12 @@ export function isHabitDoneToday(habitId) {
 export function getHabitStreak(habitId) {
   let streak = 0;
   const d = new Date();
+  /* Si hoy no está completado, empezar desde ayer —
+     la racha sigue activa mientras no se rompa el día anterior */
+  const todayDs = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  if (!(habitLog[todayDs] && habitLog[todayDs][habitId])) {
+    d.setDate(d.getDate() - 1);
+  }
   for (let i = 0; i < 365; i++) {
     const ds = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
     if (habitLog[ds] && habitLog[ds][habitId]) {
