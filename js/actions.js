@@ -15,6 +15,7 @@ import {
 import { fireBurst } from './particles.js';
 import { buildReflection } from './reflection.js';
 import { getHabitsSummary } from './habits.js';
+import { initDrawerSwipe } from './gestures.js';
 // renderView se inyecta desde app.js para evitar import circular (router→views→actions→router)
 let _renderView = () => {};
 export function setRenderViewFn(fn) { _renderView = fn; }
@@ -169,7 +170,7 @@ export function openPlanDrawer() {
   const h = hour();
   _pPreset = 'today';
   _pCustomDs = null;
-  _pArea = 'dian';
+  _pArea = AREAS[0]?.id || 'dian';
   /* bloque por defecto = bloque actual */
   _pBlock = blockId(h);
   _ensureValidBlock();
@@ -205,7 +206,7 @@ export function renderPlanDrawer() {
 
   body.innerHTML = `
     <input class="plan-input" id="plan-inp" placeholder="¿Qué vas a hacer?"
-      onkeydown="if(event.key==='Enter'){event.preventDefault();window._addDrawerTask()}">
+      onkeydown="if(event.key==='Enter'){event.preventDefault();kedo._addDrawerTask()}">
 
     <div class="plan-section-lbl">Cuándo</div>
     <div class="plan-chip-row" id="plan-date-chips"></div>
@@ -216,7 +217,7 @@ export function renderPlanDrawer() {
     <div class="plan-section-lbl">Área</div>
     <div class="plan-chip-row" id="plan-area-chips"></div>
 
-    <button class="plan-submit-btn" onclick="window._addDrawerTask()">Agregar tarea</button>
+    <button class="plan-submit-btn" onclick="kedo._addDrawerTask()">Agregar tarea</button>
   `;
 
   _renderDateChips();
@@ -235,7 +236,7 @@ function _renderDateChips() {
     { id: 'tomorrow', label: 'Mañana' },
   ];
   const dateChips = presets.map(p =>
-    `<button class="plan-chip${_pPreset===p.id?' sel':''}" onclick="window._pickDrawerPreset('${p.id}')">${p.label}</button>`
+    `<button class="plan-chip${_pPreset===p.id?' sel':''}" onclick="kedo._pickDrawerPreset('${p.id}')">${p.label}</button>`
   ).join('');
   const customChip = `
     <label class="plan-chip plan-chip-custom${isCustom?' has-date':''}" style="position:relative">
@@ -243,7 +244,7 @@ function _renderDateChips() {
       <span class="plan-chip-chv">›</span>
       <input type="date" class="plan-date-input" min="${todayStr()}"
         value="${_pCustomDs || ''}"
-        onchange="window._pickDrawerCustomDate(this.value)">
+        onchange="kedo._pickDrawerCustomDate(this.value)">
     </label>`;
   el.innerHTML = dateChips + customChip;
 }
@@ -256,7 +257,7 @@ function _renderBlockChips() {
     const disabled = dis.has(b.id);
     const sel = _pBlock === b.id && !disabled;
     return `<button class="plan-chip${sel?' sel':''}${disabled?' disabled':''}"
-      ${disabled ? 'aria-disabled="true"' : `onclick="window._pickDrawerBlock('${b.id}')"`}>${b.label}</button>`;
+      ${disabled ? 'aria-disabled="true"' : `onclick="kedo._pickDrawerBlock('${b.id}')"`}>${b.label}</button>`;
   }).join('');
 }
 
@@ -266,7 +267,7 @@ function _renderAreaChips() {
   el.innerHTML = AREAS.map(a => {
     const sel = _pArea === a.id;
     const style = sel ? `background:${a.bg};color:${a.tc};border-color:${a.color};font-weight:600` : '';
-    return `<button class="plan-area-chip${sel?' sel':''}" style="${style}" onclick="window._pickDrawerArea('${a.id}')">${a.label}</button>`;
+    return `<button class="plan-area-chip${sel?' sel':''}" style="${style}" onclick="kedo._pickDrawerArea('${a.id}')">${a.label}</button>`;
   }).join('');
 }
 
@@ -330,49 +331,13 @@ export function addDrawerTask() {
 }
 
 /* ── SWIPE DOWN TO CLOSE DRAWER ── */
-let _dragState = { on: false, startY: 0, dy: 0, drawer: null };
-
 export function initPlanDrawerSwipe() {
-  const handle = document.getElementById('plan-handle-wrap');
-  const drawer = document.getElementById('plan-drawer');
-  if (!handle || !drawer) return;
-
-  const onStart = (e) => {
-    if (!drawer.classList.contains('open')) return;
-    const t = e.touches ? e.touches[0] : e;
-    _dragState = { on: true, startY: t.clientY, dy: 0, drawer };
-    drawer.classList.add('dragging');
-  };
-  const onMove = (e) => {
-    if (!_dragState.on) return;
-    const t = e.touches ? e.touches[0] : e;
-    const dy = t.clientY - _dragState.startY;
-    _dragState.dy = dy;
-    if (dy > 0) {
-      drawer.style.transform = `translateY(${dy}px)`;
-      /* fade backdrop con el drag */
-      const bd = document.getElementById('plan-backdrop');
-      if (bd) bd.style.opacity = String(Math.max(1 - dy / 320, 0.15));
-    }
-  };
-  const onEnd = () => {
-    if (!_dragState.on) return;
-    const dy = _dragState.dy;
-    _dragState = { on: false, startY: 0, dy: 0, drawer: null };
-    drawer.classList.remove('dragging');
-    const bd = document.getElementById('plan-backdrop');
-    if (bd) bd.style.opacity = '';
-    if (dy > 110) {
-      closePlanDrawer();
-    } else {
-      drawer.style.transform = '';
-    }
-  };
-
-  handle.addEventListener('touchstart', onStart, { passive: true });
-  handle.addEventListener('touchmove',  onMove,  { passive: true });
-  handle.addEventListener('touchend',   onEnd);
-  handle.addEventListener('touchcancel',onEnd);
+  initDrawerSwipe({
+    handleId:  'plan-handle-wrap',
+    drawerId:  'plan-drawer',
+    backdropId:'plan-backdrop',
+    onClose:    closePlanDrawer,
+  });
 }
 
 /* ── THOUGHTS (Ideas de hoy — ahora viven en Diario, 24/7) ── */
@@ -427,7 +392,7 @@ export function pickEventArea(id) {
 }
 
 /* ── EVENT FORM (agenda) ── */
-window._onTimeChange = (inputId, lblId) => {
+function _onTimeChange(inputId, lblId) {
   const v = document.getElementById(inputId)?.value;
   const lbl = document.getElementById(lblId);
   if (!lbl) return;
@@ -439,7 +404,7 @@ window._onTimeChange = (inputId, lblId) => {
     lbl.textContent = 'Sin hora';
     lbl.classList.remove('set');
   }
-};
+}
 
 export function renderEventForm() {
   const el = document.getElementById('event-form-inner');
@@ -452,18 +417,18 @@ export function renderEventForm() {
         <span class="ev-when-lbl">Inicio</span>
         <span class="ev-when-val" id="ev-start-lbl">Sin hora</span>
         <span class="ev-when-chv">›</span>
-        <input type="time" id="ev-start" class="ev-when-input" onchange="window._onTimeChange('ev-start','ev-start-lbl')">
+        <input type="time" id="ev-start" class="ev-when-input" onchange="kedo._onTimeChange('ev-start','ev-start-lbl')">
       </div>
       <div class="ev-when-sep"></div>
       <div class="ev-when-row">
         <span class="ev-when-lbl">Fin <span class="ev-when-opt">opcional</span></span>
         <span class="ev-when-val" id="ev-end-lbl">Sin hora</span>
         <span class="ev-when-chv">›</span>
-        <input type="time" id="ev-end" class="ev-when-input" onchange="window._onTimeChange('ev-end','ev-end-lbl')">
+        <input type="time" id="ev-end" class="ev-when-input" onchange="kedo._onTimeChange('ev-end','ev-end-lbl')">
       </div>
     </div>
-    <div class="pill-group" style="margin-bottom:10px">${AREAS.map(a => `<span class="pill" data-aid="${a.id}" style="${selEventArea===a.id?`background:${a.bg};border-color:${a.color};color:${a.tc};font-weight:500`:''}" onclick="window._pickEventArea('${a.id}')">${a.label}</span>`).join('')}</div>
-    <button class="add-btn" onclick="window._addEvent()">Agregar evento</button>`;
+    <div class="pill-group" style="margin-bottom:10px">${AREAS.map(a => `<span class="pill" data-aid="${a.id}" style="${selEventArea===a.id?`background:${a.bg};border-color:${a.color};color:${a.tc};font-weight:500`:''}" onclick="kedo._pickEventArea('${a.id}')">${a.label}</span>`).join('')}</div>
+    <button class="add-btn" onclick="kedo._addEvent()">Agregar evento</button>`;
 }
 
 /* ── MOOD ── */
@@ -607,6 +572,7 @@ export function initTaskGestures(container) {
   container.addEventListener('touchmove', e => {
     if (!_swipeState.el) return;
     clearTimeout(_longPressTimer);
+    if (!e.touches.length) return;
     const dx = e.touches[0].clientX - _swipeState.startX;
     const dy = e.touches[0].clientY - _swipeState.startY;
     if (_swipeState.locked) return;
@@ -665,7 +631,7 @@ function showUndoToast(tid, label) {
     toast.className = 'undo-toast';
     document.querySelector('.app').appendChild(toast);
   }
-  toast.innerHTML = `<span>Tarea eliminada</span><button onclick="window._undoDelete('${tid}')">Deshacer</button>`;
+  toast.innerHTML = `<span>Tarea eliminada</span><button onclick="kedo._undoDelete('${tid}')">Deshacer</button>`;
   toast.classList.add('visible');
   clearTimeout(toast._timer);
   toast._timer = setTimeout(() => toast.classList.remove('visible'), 2800);
@@ -687,8 +653,8 @@ function openEditModal(tid) {
         <div class="edit-modal-label">Editar tarea</div>
         <input class="edit-modal-input" id="edit-task-input" type="text">
         <div class="edit-modal-btns">
-          <button class="edit-cancel-btn" onclick="window._closeEditModal()">Cancelar</button>
-          <button class="edit-save-btn" onclick="window._saveEditModal()">Guardar</button>
+          <button class="edit-cancel-btn" onclick="kedo._closeEditModal()">Cancelar</button>
+          <button class="edit-save-btn" onclick="kedo._saveEditModal()">Guardar</button>
         </div>
       </div>`;
     document.querySelector('.app').appendChild(modal);
@@ -700,21 +666,21 @@ function openEditModal(tid) {
   setTimeout(() => inp?.focus(), 80);
 }
 
-window._closeEditModal = () => {
+function _closeEditModal() {
   const modal = document.getElementById('edit-task-modal');
   if (modal) modal.classList.remove('open');
-};
-window._saveEditModal = () => {
+}
+function _saveEditModal() {
   const modal = document.getElementById('edit-task-modal');
   if (!modal) return;
   const tid = modal.dataset.editTid;
   const inp = modal.querySelector('#edit-task-input');
   if (inp && tid) editTaskText(tid, inp.value);
   modal.classList.remove('open');
-};
+}
 
 /* ── UNDO DELETE ── */
-window._undoDelete = (tid) => {
+function _undoDelete(tid) {
   const toast = document.getElementById('undo-toast');
   if (toast) { clearTimeout(toast._timer); toast.classList.remove('visible'); }
   if (!_undoData || _undoData.tid !== tid) return;
@@ -730,29 +696,35 @@ window._undoDelete = (tid) => {
     if (vh) vh.scrollTop = sy;
   }
   _undoData = null;
-};
+}
 
 /* ── EXPOSE GLOBALS ── */
 export function exposeGlobals() {
-  window._toggleTask         = toggleTask;
+  const k = window.kedo;
+  k._toggleTask          = toggleTask;
   /* Plan drawer */
-  window._openPlanDrawer     = openPlanDrawer;
-  window._closePlanDrawer    = closePlanDrawer;
-  window._pickDrawerPreset   = pickDrawerPreset;
-  window._pickDrawerCustomDate = pickDrawerCustomDate;
-  window._pickDrawerBlock    = pickDrawerBlock;
-  window._pickDrawerArea     = pickDrawerArea;
-  window._addDrawerTask      = addDrawerTask;
+  k._openPlanDrawer      = openPlanDrawer;
+  k._closePlanDrawer     = closePlanDrawer;
+  k._pickDrawerPreset    = pickDrawerPreset;
+  k._pickDrawerCustomDate = pickDrawerCustomDate;
+  k._pickDrawerBlock     = pickDrawerBlock;
+  k._pickDrawerArea      = pickDrawerArea;
+  k._addDrawerTask       = addDrawerTask;
   /* Events */
-  window._addEvent           = addEvent;
-  window._delEvent           = delEvent;
-  window._pickEventArea      = pickEventArea;
+  k._addEvent            = addEvent;
+  k._delEvent            = delEvent;
+  k._pickEventArea       = pickEventArea;
   /* Journal */
-  window._pickMood           = pickMood;
-  window._generateRefl       = generateReflection;
-  window._closeReflModal     = closeReflModal;
-  window.openReflModal       = openReflModal;
-  window._openPastRefl       = openPastRefl;
-  window._saveThought        = saveThought;
-  window._delThought         = delThought;
+  k._pickMood            = pickMood;
+  k._generateRefl        = generateReflection;
+  k._closeReflModal      = closeReflModal;
+  k.openReflModal        = openReflModal;
+  k._openPastRefl        = openPastRefl;
+  k._saveThought         = saveThought;
+  k._delThought          = delThought;
+  /* Inline handlers (formerly module-level window assignments) */
+  k._onTimeChange        = _onTimeChange;
+  k._closeEditModal      = _closeEditModal;
+  k._saveEditModal       = _saveEditModal;
+  k._undoDelete          = _undoDelete;
 }

@@ -67,8 +67,8 @@ setInterval(() => {
 
 /* ── EXPOSE GLOBALS ── */
 export function exposeRouterGlobals(setRenderViewFn) {
-  window.go  = go;
-  window.sim = sim;
+  window.kedo.go  = go;
+  window.kedo.sim = sim;
   // Inject renderView into actions.js to break circular dependency
   if (setRenderViewFn) setRenderViewFn(renderView);
 }

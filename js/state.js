@@ -4,12 +4,23 @@
    ═══════════════════════════════════════════════ */
 
 /* ── CONSTANTS ── */
-export const AREAS = [
-  { id:'dian',    label:'DIAN',      color:'#6c63d4', bg:'#eeecfc', tc:'#3d3898' },
-  { id:'uni',     label:'Uni',       color:'#1a9268', bg:'#e8f5f0', tc:'#0d5c42' },
-  { id:'negocio', label:'Negocio',   color:'#b8710a', bg:'#fdf3e0', tc:'#7a4a06' },
-  { id:'proy',    label:'Proyectos', color:'#c44d2a', bg:'#faeae4', tc:'#8a3118' },
-  { id:'pers',    label:'Personal',  color:'#7a7975', bg:'#f0eeea', tc:'#4a4946' },
+export const COLOR_PRESETS = [
+  { color:'#6c63d4', bg:'#eeecfc', tc:'#3d3898' },
+  { color:'#1a9268', bg:'#e8f5f0', tc:'#0d5c42' },
+  { color:'#b8710a', bg:'#fdf3e0', tc:'#7a4a06' },
+  { color:'#c44d2a', bg:'#faeae4', tc:'#8a3118' },
+  { color:'#7a7975', bg:'#f0eeea', tc:'#4a4946' },
+  { color:'#2a74c4', bg:'#e4eefa', tc:'#1a4f8a' },
+  { color:'#c44a7e', bg:'#fae4ef', tc:'#8a3158' },
+  { color:'#0d7a8a', bg:'#e0f3f5', tc:'#064f5a' },
+];
+
+const DEFAULT_AREAS = [
+  { id:'dian',    label:'DIAN',      ...COLOR_PRESETS[0] },
+  { id:'uni',     label:'Uni',       ...COLOR_PRESETS[1] },
+  { id:'negocio', label:'Negocio',   ...COLOR_PRESETS[2] },
+  { id:'proy',    label:'Proyectos', ...COLOR_PRESETS[3] },
+  { id:'pers',    label:'Personal',  ...COLOR_PRESETS[4] },
 ];
 
 export const BLOCKS = [
@@ -37,6 +48,7 @@ const K = {
   journals: 'kb4_journals',
   habits:   'kb4_habits',
   habitLog: 'kb4_habitLog',
+  areas:    'kb4_areas',
 };
 
 /* ── SAFE LOADER ── */
@@ -66,6 +78,7 @@ export let events   = _load(K.events,   []);
 export let journals = _load(K.journals, []);
 export let habits   = _load(K.habits,   []);
 export let habitLog = _load(K.habitLog, {});
+export let AREAS    = _load(K.areas,    DEFAULT_AREAS.map(a => ({...a})));
 
 /* ── UI STATE (no persisted) ── */
 export let selArea       = 'dian';
@@ -95,6 +108,7 @@ export function setEvents(v)   { events = v; }
 export function setJournals(v) { journals = v; }
 export function setHabits(v)   { habits = v; }
 export function setHabitLog(v) { habitLog = v; }
+export function setAreas(v)    { AREAS = v; }
 
 /* ── PERSIST ── */
 export function save() {
@@ -105,6 +119,7 @@ export function save() {
   localStorage.setItem(K.journals, JSON.stringify(journals));
   localStorage.setItem(K.habits,   JSON.stringify(habits));
   localStorage.setItem(K.habitLog, JSON.stringify(habitLog));
+  localStorage.setItem(K.areas,    JSON.stringify(AREAS));
 }
 
 /* ── HELPERS (shared) ── must be defined before bootstrap IIFE */
@@ -141,13 +156,15 @@ export const esc       = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g
     events = events.filter(e => e.date >= today);
     dirty = true;
   }
-  /* auto-archive today's events whose endTime has already passed */
+  /* auto-archive today's events whose endTime has already passed.
+     Skip cross-midnight events (endTime < startTime) — they purge by date next day. */
   const _now = new Date();
   const currentTime = `${pad(_now.getHours())}:${pad(_now.getMinutes())}`;
-  const expiredByTime = events.filter(e => e.date === today && e.endTime && e.endTime < currentTime);
+  const _isCrossMidnight = e => e.startTime && e.endTime && e.endTime < e.startTime;
+  const expiredByTime = events.filter(e => e.date === today && e.endTime && e.endTime < currentTime && !_isCrossMidnight(e));
   if (expiredByTime.length) {
     expiredByTime.forEach(e => history.push({ ...e, archivedAt: today }));
-    events = events.filter(e => !(e.date === today && e.endTime && e.endTime < currentTime));
+    events = events.filter(e => !(e.date === today && e.endTime && e.endTime < currentTime && !_isCrossMidnight(e)));
     dirty = true;
   }
   if (dirty) save();
@@ -213,10 +230,11 @@ export function purgeExpiredEvents() {
   const today = todayStr();
   const _now = new Date();
   const currentTime = `${pad(_now.getHours())}:${pad(_now.getMinutes())}`;
-  const expired = events.filter(e => e.date === today && e.endTime && e.endTime < currentTime);
+  const isCrossMidnight = e => e.startTime && e.endTime && e.endTime < e.startTime;
+  const expired = events.filter(e => e.date === today && e.endTime && e.endTime < currentTime && !isCrossMidnight(e));
   if (!expired.length) return false;
   expired.forEach(e => history.push({ ...e, archivedAt: today }));
-  events = events.filter(e => !(e.date === today && e.endTime && e.endTime < currentTime));
+  events = events.filter(e => !(e.date === today && e.endTime && e.endTime < currentTime && !isCrossMidnight(e)));
   save();
   return true;
 }

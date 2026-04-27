@@ -122,6 +122,51 @@
 .event-swipe-lbl{font-size:11px;font-weight:600;color:rgba(255,255,255,0.85);letter-spacing:.05em;text-transform:uppercase;white-space:nowrap}
 .event-swipe-icon{width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.22);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform 0.18s var(--spring),background 0.18s}
 .event-swipe-icon.armed{transform:scale(1.22);background:rgba(255,255,255,0.4)}
+/* ── UPDATE BANNER ── */
+.update-banner{position:fixed;bottom:calc(72px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(20px);background:var(--text);color:var(--bg);padding:9px 9px 9px 14px;border-radius:99px;font-size:13px;display:flex;align-items:center;gap:10px;opacity:0;pointer-events:none;transition:opacity 0.22s var(--ease),transform 0.28s var(--spring);z-index:7100;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,0.18)}
+.update-banner.visible{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
+.update-banner-icon{opacity:0.7;display:flex;align-items:center;flex-shrink:0}
+.update-btn{background:var(--purple);border:none;color:#fff;font-size:12px;font-weight:600;cursor:pointer;padding:6px 13px;border-radius:99px;font-family:inherit;transition:opacity 0.15s;flex-shrink:0}
+.update-btn:active{opacity:0.82}
+.update-dismiss{background:none;border:none;color:var(--bg);opacity:0.5;cursor:pointer;padding:4px 6px;display:flex;align-items:center;justify-content:center;transition:opacity 0.15s;flex-shrink:0}
+.update-dismiss:active{opacity:0.3}
+/* ── AREAS EDIT BUTTON (dash) ── */
+.areas-edit-btn{display:flex;align-items:center;gap:6px;margin:6px 14px 0;padding:9px 16px;width:calc(100% - 28px);background:var(--bg2);color:var(--text3);border:0.5px solid var(--border);border-radius:var(--r-sm);font-size:12px;font-weight:500;font-family:inherit;cursor:pointer;transition:all 0.15s var(--spring);letter-spacing:.02em;box-sizing:border-box}
+.areas-edit-btn:active{transform:scale(0.98);background:var(--bg3);color:var(--text2)}
+/* ── AREAS DRAWER ── */
+.areas-overlay{position:fixed;inset:0;background:rgba(0,0,0,0);z-index:9000;pointer-events:none;transition:background 0.28s var(--ease)}
+.areas-overlay.open{background:rgba(0,0,0,0.44);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:auto}
+.areas-drawer{position:fixed;bottom:0;left:0;right:0;background:var(--bg);border-radius:20px 20px 0 0;z-index:9001;transform:translateY(110%);transition:transform 0.38s var(--spring);max-height:85vh;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom)}
+.areas-drawer.open{transform:translateY(0)}
+.areas-drawer.dragging{transition:none}
+.areas-handle-wrap{padding:14px 0 8px;display:flex;justify-content:center;cursor:grab;flex-shrink:0}
+.areas-handle{width:34px;height:4px;background:var(--border2);border-radius:99px}
+.areas-drawer-header{padding:0 20px 14px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.areas-drawer-title{font-size:17px;font-weight:600;color:var(--text)}
+.areas-close-btn{width:28px;height:28px;border-radius:50%;background:var(--bg2);border:none;color:var(--text2);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s var(--spring)}
+.areas-close-btn:active{transform:scale(0.88);background:var(--bg3)}
+.areas-body{flex:1;overflow-y:auto;padding:0 16px 20px}
+.areas-row{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg);border:0.5px solid var(--border);border-radius:var(--r);margin-bottom:6px}
+.area-row-pip{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.area-row-label{flex:1;font-size:14px;color:var(--text)}
+.area-del-btn{width:28px;height:28px;border-radius:50%;background:var(--bg2);border:0.5px solid var(--border);color:var(--text3);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s var(--spring);flex-shrink:0}
+.area-del-btn:active{background:rgba(255,59,48,0.08);color:#ff3b30;border-color:#ff3b30;transform:scale(0.88)}
+.areas-add-trigger{display:flex;align-items:center;gap:8px;width:100%;padding:10px 12px;background:var(--bg2);border:0.5px dashed var(--border2);border-radius:var(--r);color:var(--text3);font-size:14px;font-family:inherit;cursor:pointer;transition:all 0.15s var(--spring);margin-top:4px;box-sizing:border-box}
+.areas-add-trigger:active{transform:scale(0.98);background:var(--bg3)}
+.areas-add-form{background:var(--bg);border:0.5px solid var(--border2);border-radius:var(--r);padding:14px;margin-top:6px;animation:pg-in 0.22s var(--ease) both}
+.areas-add-input{width:100%;border:0.5px solid var(--border2);background:var(--bg2);border-radius:var(--r-sm);padding:10px 13px;font-size:14px;color:var(--text);font-family:inherit;outline:none;margin-bottom:12px;transition:border-color 0.15s;box-sizing:border-box}
+.areas-add-input:focus{border-color:var(--purple)}
+.areas-add-input::placeholder{color:var(--text3)}
+.area-swatches-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.area-color-swatch{width:28px;height:28px;border-radius:50%;cursor:pointer;transition:transform 0.15s var(--spring),box-shadow 0.15s}
+.area-color-swatch:active{transform:scale(0.85)}
+.area-color-swatch.sel{transform:scale(1.15);box-shadow:0 0 0 2px var(--bg),0 0 0 3.5px var(--text)}
+.areas-form-btns{display:flex;gap:8px}
+.area-cancel-btn{flex:1;padding:10px;background:var(--bg2);color:var(--text2);border:0.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:all 0.15s var(--spring)}
+.area-cancel-btn:active{transform:scale(0.96);opacity:0.8}
+.area-confirm-btn{flex:2;padding:10px;background:var(--purple);color:#fff;border:none;border-radius:var(--r-sm);font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:all 0.18s var(--spring)}
+.area-confirm-btn:active{transform:scale(0.97);opacity:0.88}
+.area-confirm-btn:disabled{opacity:0.35;cursor:not-allowed;transform:none}
 </style>
 </head>
 <body>
@@ -135,14 +180,14 @@
   </div>
 
   <nav class="nav">
-    <button class="nav-item active" id="nav-home" onclick="go('home',0)">
+    <button class="nav-item active" id="nav-home" onclick="kedo.go('home',0)">
       <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/>
       </svg>
       <div class="nav-dot"></div>
       <span class="nav-label">Hoy</span>
     </button>
-    <button class="nav-item" id="nav-agenda" onclick="go('agenda',1)">
+    <button class="nav-item" id="nav-agenda" onclick="kedo.go('agenda',1)">
       <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/>
         <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/>
@@ -150,14 +195,14 @@
       <div class="nav-dot"></div>
       <span class="nav-label">Agenda</span>
     </button>
-    <button class="nav-item" id="nav-journal" onclick="go('journal',2)">
+    <button class="nav-item" id="nav-journal" onclick="kedo.go('journal',2)">
       <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
       </svg>
       <div class="nav-dot"></div>
       <span class="nav-label">Diario</span>
     </button>
-    <button class="nav-item" id="nav-dash" onclick="go('dash',3)">
+    <button class="nav-item" id="nav-dash" onclick="kedo.go('dash',3)">
       <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M18 20V10M12 20V4M6 20v-6"/>
       </svg>
@@ -167,24 +212,42 @@
   </nav>
 
   <!-- REFLECTION MODAL -->
-  <div class="refl-overlay" id="refl-overlay" onclick="if(event.target===this)window._closeReflModal()">
+  <div class="refl-overlay" id="refl-overlay" onclick="if(event.target===this)kedo._closeReflModal()">
     <div class="refl-modal" id="refl-modal">
       <div class="refl-modal-bar"></div>
       <div class="refl-modal-scroll" id="refl-modal-content"></div>
       <div class="refl-modal-footer">
-        <button class="refl-ok-btn" id="refl-ok-btn" onclick="window._closeReflModal()">Perfecto</button>
+        <button class="refl-ok-btn" id="refl-ok-btn" onclick="kedo._closeReflModal()">Perfecto</button>
       </div>
     </div>
   </div>
 
   <!-- PLAN FAB + DRAWER (solo home) -->
-  <button class="plan-fab" id="plan-fab" onclick="window._openPlanDrawer()" aria-label="Nueva tarea">
+  <button class="plan-fab" id="plan-fab" onclick="kedo._openPlanDrawer()" aria-label="Nueva tarea">
     <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
       <line x1="11" y1="4" x2="11" y2="18" stroke="white" stroke-width="2" stroke-linecap="round"/>
       <line x1="4" y1="11" x2="18" y2="11" stroke="white" stroke-width="2" stroke-linecap="round"/>
     </svg>
   </button>
-  <div class="plan-backdrop" id="plan-backdrop" onclick="window._closePlanDrawer()"></div>
+  <!-- UPDATE BANNER -->
+  <div class="update-banner" id="update-banner" role="status">
+    <span class="update-banner-icon">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M7 2.5v3.5l2.5-2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M11.5 7A4.5 4.5 0 117 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+      </svg>
+    </span>
+    <span>Nueva versión disponible</span>
+    <button class="update-btn" onclick="window.location.reload()">Actualizar</button>
+    <button class="update-dismiss" onclick="document.getElementById('update-banner').classList.remove('visible')" aria-label="Cerrar">
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+        <line x1="2" y1="2" x2="8" y2="8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="8" y1="2" x2="2" y2="8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </div>
+
+  <div class="plan-backdrop" id="plan-backdrop" onclick="kedo._closePlanDrawer()"></div>
   <div class="plan-drawer" id="plan-drawer" role="dialog" aria-modal="true">
     <div class="plan-handle-wrap" id="plan-handle-wrap"><div class="plan-handle"></div></div>
     <div class="plan-header">
@@ -192,13 +255,42 @@
     </div>
     <div class="plan-body" id="plan-drawer-body"></div>
   </div>
+
+  <!-- AREAS DRAWER -->
+  <div class="areas-overlay" id="areas-overlay" onclick="if(event.target===this)kedo._closeAreasDrawer()"></div>
+  <div class="areas-drawer" id="areas-drawer" role="dialog" aria-modal="true" aria-label="Editar áreas">
+    <div class="areas-handle-wrap" id="areas-handle-wrap"><div class="areas-handle"></div></div>
+    <div class="areas-drawer-header">
+      <span class="areas-drawer-title">Mis áreas</span>
+      <button class="areas-close-btn" onclick="kedo._closeAreasDrawer()" aria-label="Cerrar">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <line x1="2" y1="2" x2="10" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="10" y1="2" x2="2" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+    <div class="areas-body" id="areas-drawer-body"></div>
+  </div>
 </div>
 
 <script type="module" src="app.js"></script>
 <script>
 if ('serviceWorker' in navigator) {
+  /* Capturar hadController e instalar el listener lo antes posible —
+     fuera de window.load — para no perder controllerchange si el SW
+     nuevo termina de activarse antes de que el evento load dispare. */
+  const hadController = !!navigator.serviceWorker.controller;
+
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (hadController) {
+      document.getElementById('update-banner')?.classList.add('visible');
+    }
+  });
+
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
+    navigator.serviceWorker.register('sw.js')
+      .then(reg => { reg.update().catch(() => {}); })
+      .catch(() => {});
   });
 }
 </script>

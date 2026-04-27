@@ -33,7 +33,7 @@ export function renderDash() {
     const tot = [...tasks, ...history].filter(t => t.area === a.id).length;
     const dn  = [...tasks.filter(t => t.done), ...history].filter(t => t.area === a.id).length;
     return { ...a, tot, dn, pct: tot ? Math.round(dn / tot * 100) : 0 };
-  }).filter(a => a.tot > 0);
+  });
 
   /* semana actual L→D */
   const last7  = [];
@@ -105,11 +105,16 @@ export function renderDash() {
     <div class="streak-dots pe pe2" style="padding:2px 20px 14px">
       ${last7.map(d => `<div class="streak-dot${d.has?' active':''}${d.isToday?' today':''}${d.isFut?' future':''}"><div class="s-pip"></div><div class="s-lbl">${d.lbl}</div></div>`).join('')}
     </div>
-    ${areaStats.length ? `
-      <div class="section-label pe pe3">Por área</div>
-      <div class="card pe pe3"><div class="card-inner">
-        ${areaStats.map(a => `<div class="area-row"><div class="area-pip-sm" style="background:${a.color}"></div><span class="area-name">${a.label}</span><div class="area-bar-track"><div class="area-bar-fill" style="width:${a.pct}%;background:${a.color}"></div></div><span class="area-pct-lbl">${a.pct}%</span></div>`).join('')}
-      </div></div>` : ''}
+    <div class="section-label pe pe3">Por área</div>
+    <div class="card pe pe3"><div class="card-inner">
+      ${areaStats.map(a => `<div class="area-row"><div class="area-pip-sm" style="background:${a.color}"></div><span class="area-name">${a.label}</span><div class="area-bar-track"><div class="area-bar-fill" style="width:${a.pct}%;background:${a.color}"></div></div><span class="area-pct-lbl">${a.pct}%</span></div>`).join('')}
+    </div></div>
+    <button class="areas-edit-btn pe pe3" onclick="kedo._openAreasDrawer()">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+        <path d="M8.5 1.5a1.5 1.5 0 012.12 2.12L4 10.25l-2.5.5.5-2.5L8.5 1.5z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Editar áreas
+    </button>
     ${habitsStatsHTML}
     <div class="section-label pe pe5">Completadas recientemente</div>
     ${recent.length ? `<div class="card pe pe5"><div class="card-inner">

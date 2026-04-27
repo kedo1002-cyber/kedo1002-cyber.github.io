@@ -9,7 +9,6 @@ import {
   setReflToday, esc,
   MOODS, DN, MN,
 } from '../state.js';
-import { openReflModal, openPastRefl } from '../actions.js';
 
 const upSvg = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><line x1="7" y1="12" x2="7" y2="2" stroke="white" stroke-width="1.8" stroke-linecap="round"/><polyline points="3,6 7,2 11,6" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
@@ -35,13 +34,13 @@ export function renderJournal() {
       <div class="ideas-ta-row">
         <textarea class="ideas-ta" id="journal-cap-ta" placeholder="Anota cualquier idea..." rows="1"
           oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px';document.getElementById('journal-cap-send').classList.toggle('ready',this.value.trim().length>0)"></textarea>
-        <button class="ideas-send" id="journal-cap-send" onclick="window._saveThought()">${upSvg}</button>
+        <button class="ideas-send" id="journal-cap-send" onclick="kedo._saveThought()">${upSvg}</button>
       </div>
       <div class="thought-chips" id="journal-thought-chips">
         ${todayTh.map(th => `
           <div class="thought-chip" data-thid="${th.id}">
             <span class="thought-chip-txt">${esc(th.text)}</span>
-            <span class="thought-chip-x" onclick="window._delThought('${th.id}')">
+            <span class="thought-chip-x" onclick="kedo._delThought('${th.id}')">
               <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
                 <line x1="1.5" y1="1.5" x2="6.5" y2="6.5" stroke="var(--text3)" stroke-width="1.5" stroke-linecap="round"/>
                 <line x1="6.5" y1="1.5" x2="1.5" y2="6.5" stroke="var(--text3)" stroke-width="1.5" stroke-linecap="round"/>
@@ -53,13 +52,13 @@ export function renderJournal() {
 
   /* ── REFLEXIÓN — siempre visible, opcional ── */
   const btnHtml = existing
-    ? `<button class="gen-btn is-view pe pe4" id="gen-btn" onclick="openReflModal(window._reflToday)">Ver reflexión</button>`
-    : `<button class="gen-btn pe pe4" id="gen-btn" onclick="window._generateRefl()" ${selMood ? '' : 'disabled'}>Generar reflexión</button>`;
+    ? `<button class="gen-btn is-view pe pe4" id="gen-btn" onclick="kedo.openReflModal(kedo._reflToday)">Ver reflexión</button>`
+    : `<button class="gen-btn pe pe4" id="gen-btn" onclick="kedo._generateRefl()" ${selMood ? '' : 'disabled'}>Generar reflexión</button>`;
 
   h += `
     <div class="section-label pe pe2" style="margin-top:18px">¿Cómo estuvo el día?</div>
     <div class="mood-grid pe pe2">
-      ${MOODS.map(m => `<div class="mood-btn${selMood===m.id?' sel':''}" data-mood="${m.id}" onclick="window._pickMood('${m.id}')"><span class="mood-face">${m.face}</span><span class="mood-word">${m.word}</span></div>`).join('')}
+      ${MOODS.map(m => `<div class="mood-btn${selMood===m.id?' sel':''}" data-mood="${m.id}" onclick="kedo._pickMood('${m.id}')"><span class="mood-face">${m.face}</span><span class="mood-word">${m.word}</span></div>`).join('')}
     </div>
     <div class="section-label pe pe3">Journal libre</div>
     <div class="journal-field-wrap pe pe3">
@@ -82,7 +81,7 @@ export function renderJournal() {
         const m   = MOODS.find(x => x.id === j.mood) || MOODS[1];
         const d   = new Date(j.date + 'T12:00:00');
         const prv = j.reflection ? j.reflection.slice(0, 80) + '…' : j.journalText?.slice(0, 80) || '';
-        return `<div class="past-entry" data-jid="${j.id}" onclick="window._openPastRefl('${j.id}')" style="cursor:pointer">
+        return `<div class="past-entry" data-jid="${j.id}" onclick="kedo._openPastRefl('${j.id}')" style="cursor:pointer">
           <span class="past-face">${m.face}</span>
           <div class="past-body">
             <div class="past-date">${DN[d.getDay()]} ${d.getDate()} ${MN[d.getMonth()]} · ${j.tasksCompleted||0}/${j.tasksTotal||0}</div>
@@ -101,7 +100,6 @@ export function renderJournal() {
     document.querySelectorAll('.mood-btn').forEach(b => b.classList.toggle('sel', b.dataset.mood === existing.mood));
   }
 
-  /* exponer openReflModal globalmente para inline handlers */
-  window.openReflModal  = openReflModal;
-  window._reflToday     = journals.find(j => j.date === todayStr()) || null;
+  /* actualizar _reflToday en el namespace para que "Ver reflexión" use la entrada de hoy */
+  window.kedo._reflToday = journals.find(j => j.date === todayStr()) || null;
 }

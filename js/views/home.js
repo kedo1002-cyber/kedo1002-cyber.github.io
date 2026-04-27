@@ -24,7 +24,7 @@ const _wm = `<div class="home-watermark"><span class="home-wm-by">Design by</spa
 function taskCard(t) {
   const a = getArea(t.area);
   return `
-  <div class="task${t.done?' done':''}" data-tid="${t.id}" onclick="window._toggleTask('${t.id}')">
+  <div class="task${t.done?' done':''}" data-tid="${t.id}" onclick="kedo._toggleTask('${t.id}')">
     <div class="task-delete-backdrop">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
         <polyline points="2,3 3,3 12,3" stroke="white" stroke-width="1.4" stroke-linecap="round"/>
@@ -50,7 +50,7 @@ function buildEventHint(nextEv) {
         <svg width="12" height="9" viewBox="0 0 12 9" fill="none"><polyline points="1,4.5 4.5,8 11,1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>
     </div>
-    <div class="event-hint" data-evid="${nextEv.id}" onclick="ehHandleClick()" style="--eh-accent:${_uc}">
+    <div class="event-hint" data-evid="${nextEv.id}" onclick="kedo.ehHandleClick()" style="--eh-accent:${_uc}">
       <div class="eh-days-col">
         <div class="event-hint-days" style="color:${_uc}">${_d === 0 ? '0' : _d}</div>
         <div class="event-hint-days-lbl">${_dLbl}</div>
@@ -143,9 +143,9 @@ export function renderHome() {
 /* ── EVENT HINT SWIPE ── */
 function ehHandleClick() {
   if (Math.abs(_ehLastDx) > 6) { _ehLastDx = 0; return; }
-  window.go('agenda', 1);
+  window.kedo.go('agenda', 1);
 }
-window.ehHandleClick = ehHandleClick;
+window.kedo.ehHandleClick = ehHandleClick;
 
 function initEventHintSwipe() {
   const el = document.querySelector('.event-hint[data-evid]');
@@ -169,6 +169,7 @@ function initEventHintSwipe() {
 }
 
 function _ehStart(e) {
+  if (!e.touches.length) return;
   _ehX = e.touches[0].clientX; _ehY = e.touches[0].clientY;
   _ehEl = this; _ehOn = false; _ehLocked = false; _ehFired = false; _ehLastDx = 0;
   /* cancelar animación nudge inmediatamente — evita conflicto CSS anim vs JS transform */
@@ -178,7 +179,7 @@ function _ehStart(e) {
 }
 
 function _ehMove(e) {
-  if (_ehLocked || !_ehEl) return;
+  if (_ehLocked || !_ehEl || !e.touches.length) return;
   const dx = e.touches[0].clientX - _ehX;
   const dy = e.touches[0].clientY - _ehY;
   if (!_ehOn) {
