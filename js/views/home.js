@@ -141,11 +141,10 @@ export function renderHome() {
 }
 
 /* ── EVENT HINT SWIPE ── */
-function ehHandleClick() {
+export function ehHandleClick() {
   if (Math.abs(_ehLastDx) > 6) { _ehLastDx = 0; return; }
   window.kedo.go('agenda', 1);
 }
-window.kedo.ehHandleClick = ehHandleClick;
 
 function initEventHintSwipe() {
   const el = document.querySelector('.event-hint[data-evid]');
