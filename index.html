@@ -276,26 +276,21 @@
 <script type="module" src="app.js"></script>
 <script>
 if ('serviceWorker' in navigator) {
+  /* Capturar hadController e instalar el listener lo antes posible —
+     fuera de window.load — para no perder controllerchange si el SW
+     nuevo termina de activarse antes de que el evento load dispare. */
+  const hadController = !!navigator.serviceWorker.controller;
+
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (hadController) {
+      document.getElementById('update-banner')?.classList.add('visible');
+    }
+  });
+
   window.addEventListener('load', () => {
-    /* Si ya hay un SW activo, cualquier cambio de controller es una actualización.
-       Capturar ANTES del registro para no confundir la primera instalación. */
-    const hadController = !!navigator.serviceWorker.controller;
-
     navigator.serviceWorker.register('sw.js')
-      .then(reg => {
-        /* Forzar comprobación inmediata en cada apertura de la app.
-           El browser ya lo hace en navegación, pero esto lo garantiza. */
-        reg.update().catch(() => {});
-      })
+      .then(reg => { reg.update().catch(() => {}); })
       .catch(() => {});
-
-    /* controllerchange dispara cuando el nuevo SW (que usó skipWaiting)
-       toma el control. Solo mostrar si reemplaza a uno existente. */
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if (hadController) {
-        document.getElementById('update-banner')?.classList.add('visible');
-      }
-    });
   });
 }
 </script>
