@@ -6,7 +6,7 @@
 
 import {
   habits, habitLog, setHabits, setHabitLog,
-  save, todayStr, pad,
+  save, todayStr, pad, esc,
   isHabitDoneToday, getHabitStreak, getHabitHistory7,
 } from './state.js';
 import { fireBurst } from './particles.js';
@@ -130,12 +130,12 @@ export function renderHabitsSection() {
       <div class="habit-card${done ? ' done' : ''}" data-hid="${h.id}" onclick="window._habitToggle('${h.id}')">
         <div class="habit-left">
           <div class="habit-check${done ? ' done' : ''}" style="${done ? `background:${h.color};border-color:${h.color}` : ''}">
-            ${done ? `<svg width="11" height="11" viewBox="0 0 11 11" fill="none"><polyline points="1.5,5.5 4.5,8.5 9.5,2.5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>` : `<span class="habit-icono">${h.icono}</span>`}
+            ${done ? `<svg width="11" height="11" viewBox="0 0 11 11" fill="none"><polyline points="1.5,5.5 4.5,8.5 9.5,2.5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>` : `<span class="habit-icono">${esc(h.icono)}</span>`}
           </div>
         </div>
         <div class="habit-body">
           <div class="habit-name-row">
-            <div class="habit-name">${h.nombre}</div>
+            <div class="habit-name">${esc(h.nombre)}</div>
             <div class="habit-21-badge" style="color:${badgeColor}">${badgeText}</div>
           </div>
           <div class="habit-prog-track">
@@ -216,6 +216,8 @@ function renderAddHabitInline() {
 let _renderHome = null;
 
 function _attachHabitSwipe(wrap) {
+  if (wrap.dataset.swipeInit) return;
+  wrap.dataset.swipeInit = '1';
   const card = wrap.querySelector('.habit-card');
   if (!card) return;
   const hid  = card.dataset.hid;
@@ -226,6 +228,7 @@ function _attachHabitSwipe(wrap) {
   let sx = 0, sy = 0, pull = 0, axis = null;
 
   card.addEventListener('touchstart', e => {
+    if (!e.touches.length) return;
     sx = e.touches[0].clientX; sy = e.touches[0].clientY;
     pull = 0; axis = null;
     card.style.transition = 'none';
@@ -233,6 +236,7 @@ function _attachHabitSwipe(wrap) {
   }, { passive: true });
 
   card.addEventListener('touchmove', e => {
+    if (!e.touches.length) return;
     const dx = e.touches[0].clientX - sx;
     const dy = e.touches[0].clientY - sy;
     if (!axis) {

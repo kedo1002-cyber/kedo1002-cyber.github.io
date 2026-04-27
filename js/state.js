@@ -141,13 +141,15 @@ export const esc       = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g
     events = events.filter(e => e.date >= today);
     dirty = true;
   }
-  /* auto-archive today's events whose endTime has already passed */
+  /* auto-archive today's events whose endTime has already passed.
+     Skip cross-midnight events (endTime < startTime) — they purge by date next day. */
   const _now = new Date();
   const currentTime = `${pad(_now.getHours())}:${pad(_now.getMinutes())}`;
-  const expiredByTime = events.filter(e => e.date === today && e.endTime && e.endTime < currentTime);
+  const _isCrossMidnight = e => e.startTime && e.endTime && e.endTime < e.startTime;
+  const expiredByTime = events.filter(e => e.date === today && e.endTime && e.endTime < currentTime && !_isCrossMidnight(e));
   if (expiredByTime.length) {
     expiredByTime.forEach(e => history.push({ ...e, archivedAt: today }));
-    events = events.filter(e => !(e.date === today && e.endTime && e.endTime < currentTime));
+    events = events.filter(e => !(e.date === today && e.endTime && e.endTime < currentTime && !_isCrossMidnight(e)));
     dirty = true;
   }
   if (dirty) save();
@@ -213,10 +215,11 @@ export function purgeExpiredEvents() {
   const today = todayStr();
   const _now = new Date();
   const currentTime = `${pad(_now.getHours())}:${pad(_now.getMinutes())}`;
-  const expired = events.filter(e => e.date === today && e.endTime && e.endTime < currentTime);
+  const isCrossMidnight = e => e.startTime && e.endTime && e.endTime < e.startTime;
+  const expired = events.filter(e => e.date === today && e.endTime && e.endTime < currentTime && !isCrossMidnight(e));
   if (!expired.length) return false;
   expired.forEach(e => history.push({ ...e, archivedAt: today }));
-  events = events.filter(e => !(e.date === today && e.endTime && e.endTime < currentTime));
+  events = events.filter(e => !(e.date === today && e.endTime && e.endTime < currentTime && !isCrossMidnight(e)));
   save();
   return true;
 }

@@ -607,6 +607,7 @@ export function initTaskGestures(container) {
   container.addEventListener('touchmove', e => {
     if (!_swipeState.el) return;
     clearTimeout(_longPressTimer);
+    if (!e.touches.length) return;
     const dx = e.touches[0].clientX - _swipeState.startX;
     const dy = e.touches[0].clientY - _swipeState.startY;
     if (_swipeState.locked) return;
