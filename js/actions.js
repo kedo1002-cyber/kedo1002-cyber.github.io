@@ -169,7 +169,7 @@ export function openPlanDrawer() {
   const h = hour();
   _pPreset = 'today';
   _pCustomDs = null;
-  _pArea = 'dian';
+  _pArea = AREAS[0]?.id || 'dian';
   /* bloque por defecto = bloque actual */
   _pBlock = blockId(h);
   _ensureValidBlock();

@@ -1,4 +1,4 @@
-const CACHE = 'kedo-brain-v19';
+const CACHE = 'kedo-brain-v20';
 const STATIC = [
   '/',
   '/index.html',
@@ -18,6 +18,7 @@ const STATIC = [
   '/js/views/agenda.js',
   '/js/views/journal.js',
   '/js/views/dash.js',
+  '/js/views/areas.js',
 ];
 
 self.addEventListener('install', e => {
