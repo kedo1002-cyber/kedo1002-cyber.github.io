@@ -10,6 +10,7 @@ import {
   isHabitDoneToday, getHabitStreak, getHabitHistory7,
 } from './state.js';
 import { fireBurst } from './particles.js';
+import { attachSwipeReveal } from './gestures.js';
 
 /* ── UMBRALES NEUROLÓGICOS ──
    Basado en investigación de Lally et al. (2010) sobre formación de hábitos:
@@ -127,7 +128,7 @@ export function renderHabitsSection() {
           <svg width="13" height="2" viewBox="0 0 13 2" fill="none"><rect width="13" height="2" rx="1" fill="white"/></svg>
         </div>
       </div>
-      <div class="habit-card${done ? ' done' : ''}" data-hid="${h.id}" onclick="window._habitToggle('${h.id}')">
+      <div class="habit-card${done ? ' done' : ''}" data-hid="${h.id}" onclick="kedo._habitToggle('${h.id}')">
         <div class="habit-left">
           <div class="habit-check${done ? ' done' : ''}" style="${done ? `background:${h.color};border-color:${h.color}` : ''}">
             ${done ? `<svg width="11" height="11" viewBox="0 0 11 11" fill="none"><polyline points="1.5,5.5 4.5,8.5 9.5,2.5" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>` : `<span class="habit-icono">${esc(h.icono)}</span>`}
@@ -170,7 +171,7 @@ export function renderHabitsSection() {
       <div class="habits-title">${allDone ? 'Hábitos completados' : 'Hábitos de hoy'}</div>
       <div class="habits-sub">${doneCount}/${totalCount} · ${ringPct}%</div>
     </div>
-    <button class="habit-add-mini" onclick="window._habitAddOpen()" aria-label="Agregar hábito">
+    <button class="habit-add-mini" onclick="kedo._habitAddOpen()" aria-label="Agregar hábito">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
         <line x1="7" y1="1" x2="7" y2="13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
         <line x1="1" y1="7" x2="13" y2="7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
@@ -191,7 +192,7 @@ function renderHabitsEmpty() {
     </div>
     <div class="habits-empty-title">Sin hábitos todavía</div>
     <div class="habits-empty-sub">Agrega uno para empezar tu racha neurológica.</div>
-    <button class="habit-add-btn pe" onclick="window._habitAddOpen()">Agregar primer hábito</button>
+    <button class="habit-add-btn pe" onclick="kedo._habitAddOpen()">Agregar primer hábito</button>
   </div>
   ${renderAddHabitInline()}`;
 }
@@ -202,12 +203,12 @@ function renderAddHabitInline() {
     <input class="habit-add-input" id="habit-add-name" placeholder="Nombre del hábito..." maxlength="32">
     <div class="habit-icon-row" id="habit-icon-row">
       ${['🧘','💪','📖','💧','🌙','✍️','🥗','🚶','🎯','🧠'].map(ic =>
-        `<span class="habit-icon-opt" onclick="window._habitSelectIcon('${ic}')">${ic}</span>`
+        `<span class="habit-icon-opt" onclick="kedo._habitSelectIcon('${ic}')">${ic}</span>`
       ).join('')}
     </div>
     <div class="habit-form-btns">
-      <button class="habit-cancel-btn" onclick="window._habitAddClose()">Cancelar</button>
-      <button class="habit-save-btn" onclick="window._habitAddSave()">Guardar hábito</button>
+      <button class="habit-cancel-btn" onclick="kedo._habitAddClose()">Cancelar</button>
+      <button class="habit-save-btn" onclick="kedo._habitAddSave()">Guardar hábito</button>
     </div>
   </div>`;
 }
@@ -216,72 +217,15 @@ function renderAddHabitInline() {
 let _renderHome = null;
 
 function _attachHabitSwipe(wrap) {
-  if (wrap.dataset.swipeInit) return;
-  wrap.dataset.swipeInit = '1';
-  const card = wrap.querySelector('.habit-card');
-  if (!card) return;
-  const hid  = card.dataset.hid;
-  const back = wrap.querySelector('.habit-swipe-back');
-  const icon = wrap.querySelector('.habit-swipe-icon');
-  if (!back || !icon || !hid) return;
-
-  let sx = 0, sy = 0, pull = 0, axis = null;
-
-  card.addEventListener('touchstart', e => {
-    if (!e.touches.length) return;
-    sx = e.touches[0].clientX; sy = e.touches[0].clientY;
-    pull = 0; axis = null;
-    card.style.transition = 'none';
-    back.style.transition = 'none';
-  }, { passive: true });
-
-  card.addEventListener('touchmove', e => {
-    if (!e.touches.length) return;
-    const dx = e.touches[0].clientX - sx;
-    const dy = e.touches[0].clientY - sy;
-    if (!axis) {
-      if (Math.abs(dx) < 5 && Math.abs(dy) < 5) return;
-      axis = Math.abs(dy) > Math.abs(dx) ? 'y' : 'x';
-    }
-    if (axis !== 'x' || dx > 0) return;
-    const raw = -dx;
-    pull = raw < 88 ? raw : 88 + (raw - 88) * 0.22;
-    pull = Math.min(pull, 118);
-    card.style.transform = `translateX(${-pull}px)`;
-    back.style.opacity   = String(Math.min(pull / 60, 1));
-    icon.classList.toggle('armed', pull >= 88);
-    e.preventDefault();
-  }, { passive: false });
-
-  const _snapBack = () => {
-    card.style.transition = 'transform 0.42s cubic-bezier(0.34,1.56,0.64,1)';
-    card.style.transform  = 'translateX(0)';
-    back.style.transition = 'opacity 0.3s ease';
-    back.style.opacity    = '0';
-    icon.classList.remove('armed');
-    pull = 0; axis = null;
-  };
-
-  card.addEventListener('touchend', () => {
-    if (axis !== 'x') { axis = null; return; }
-    if (pull >= 88) {
-      navigator.vibrate && navigator.vibrate(30);
-      card.style.transition = 'transform 0.26s cubic-bezier(0.4,0,1,1)';
-      card.style.transform  = `translateX(-${card.offsetWidth + 24}px)`;
-      const ht = wrap.getBoundingClientRect().height;
-      wrap.style.height   = ht + 'px';
-      wrap.style.overflow = 'hidden';
-      setTimeout(() => {
-        wrap.style.transition   = 'height 0.3s var(--ease),opacity 0.24s var(--ease),margin 0.3s var(--ease)';
-        wrap.style.height       = '0';
-        wrap.style.opacity      = '0';
-        wrap.style.marginBottom = '0';
-        setTimeout(() => { deleteHabit(hid); _refreshHabitsSection(); }, 290);
-      }, 220);
-    } else { _snapBack(); }
-  }, { passive: true });
-
-  card.addEventListener('touchcancel', _snapBack, { passive: true });
+  const hid = wrap.querySelector('.habit-card')?.dataset.hid;
+  if (!hid) return;
+  attachSwipeReveal(wrap, {
+    cardSelector: '.habit-card',
+    backSelector: '.habit-swipe-back',
+    iconSelector: '.habit-swipe-icon',
+    vibrate: 30,
+    onConfirm: () => { deleteHabit(hid); _refreshHabitsSection(); },
+  });
 }
 
 export function initHabitSwipes() {
@@ -331,20 +275,18 @@ function _refreshHabitsSection() {
 let _selectedIcon = '✦';
 export function initHabitHandlers(renderHomeFn) {
   _renderHome = renderHomeFn;
-  window._habitToggle = (id) => {
+  const k = window.kedo;
+
+  k._habitToggle = (id) => {
     const wasCompleted = toggleHabitToday(id);
     const el = document.querySelector(`[data-hid="${id}"]`);
+    const h  = habits.find(hb => hb.id === id);
+    const color = h?.color || '#6c63d4';
 
-    /* ── Ring: update quirúrgico inmediato → dispara transición CSS suave ── */
     _updateRingSurgical();
 
     if (wasCompleted && el) {
-      /* ── Feedback visual INMEDIATO — no espera el re-render ── */
-      const h = habits.find(hb => hb.id === id);
-      const color = h?.color || '#6c63d4';
       el.classList.add('done');
-
-      /* ── Check circle: spring pop ── */
       const chk = el.querySelector('.habit-check');
       if (chk) {
         chk.classList.add('done');
@@ -354,68 +296,79 @@ export function initHabitHandlers(renderHomeFn) {
         chk.classList.add('popping');
         setTimeout(() => chk.classList.remove('popping'), 420);
       }
-
-      /* ── Barra de progreso: update quirúrgico → dispara transición CSS fluida ── */
-      const fill  = el.querySelector('.habit-prog-fill');
-      const lbl   = el.querySelector('.habit-prog-lbl');
-      const badge = el.querySelector('.habit-21-badge');
-      if (fill && h) {
-        const streak  = getHabitStreak(id);
-        const GOAL    = 21;
-        const newPct  = Math.min(Math.round(streak / GOAL * 100), 100);
-        const daysLeft = Math.max(GOAL - streak, 0);
-        const s = streak !== 1 ? 's' : '';
-        const formed  = streak >= GOAL;
-        fill.style.width      = newPct + '%';
-        fill.style.background = formed ? '#1a9268' : color;
-        if (lbl) lbl.innerHTML = formed
-          ? `<span style="color:#1a9268;font-weight:500">¡Hábito formado! Llevas ${streak} días</span>`
-          : streak > 0
-            ? `${streak} día${s} seguido${s} · <span style="color:${color};font-weight:500">Faltan ${daysLeft}</span>`
-            : `Empieza hoy · <span style="color:${color};font-weight:500">Faltan ${GOAL}</span>`;
-        if (badge) { badge.style.color = formed ? '#1a9268' : color; badge.textContent = formed ? `✓ ${streak}d` : `${streak}/${GOAL}`; }
-      }
-
-      /* ── Efectos ── */
+      _updateCardBar(el, id, h, color);
       const r = el.getBoundingClientRect();
       fireBurst(r.left + r.width / 2, r.top + r.height / 2, 'habit');
       navigator.vibrate && navigator.vibrate([8, 40, 12]);
-
-      /* ── Card bounce — re-render después de que la barra termine (0.48s) ── */
       el.classList.add('habit-completing');
       el.addEventListener('animationend', () => el.classList.remove('habit-completing'), { once: true });
-      setTimeout(_refreshHabitsSection, 480);
+      return;
+    }
+
+    if (!wasCompleted && el) {
+      el.classList.remove('done');
+      const chk = el.querySelector('.habit-check');
+      if (chk) {
+        chk.classList.remove('done', 'popping');
+        chk.style.background  = '';
+        chk.style.borderColor = '';
+        chk.innerHTML = h ? `<span class="habit-icono">${esc(h.icono)}</span>` : '';
+      }
+      _updateCardBar(el, id, h, color);
       return;
     }
 
     _refreshHabitsSection();
   };
 
-  window._habitAddOpen = () => {
+  k._habitAddOpen = () => {
     const form = document.getElementById('habit-add-form');
     if (form) { form.style.display = 'block'; form.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
   };
-  window._habitAddClose = () => {
+  k._habitAddClose = () => {
     const form = document.getElementById('habit-add-form');
     if (form) form.style.display = 'none';
     _selectedIcon = '✦';
     document.querySelectorAll('.habit-icon-opt').forEach(el => el.classList.remove('sel'));
   };
-  window._habitSelectIcon = (ic) => {
+  k._habitSelectIcon = (ic) => {
     _selectedIcon = ic;
     document.querySelectorAll('.habit-icon-opt').forEach(el => el.classList.toggle('sel', el.textContent === ic));
   };
-  window._habitAddSave = () => {
+  k._habitAddSave = () => {
     const inp = document.getElementById('habit-add-name');
     if (!inp?.value.trim()) return;
     addHabit(inp.value.trim(), _selectedIcon, '#6c63d4');
-    window._habitAddClose();
+    k._habitAddClose();
     _refreshHabitsSection();
   };
-  window._habitDeleteConfirm = (id) => {
+  k._habitDeleteConfirm = (id) => {
     if (confirm('¿Eliminar este hábito? Se perderá toda su historia.')) {
       deleteHabit(id);
       _refreshHabitsSection();
     }
   };
+}
+
+/* Actualiza la barra de progreso, etiqueta y badge de un card — compartido
+   entre toggle y un-toggle para evitar duplicación de lógica. */
+function _updateCardBar(el, id, h, color) {
+  const fill  = el.querySelector('.habit-prog-fill');
+  const lbl   = el.querySelector('.habit-prog-lbl');
+  const badge = el.querySelector('.habit-21-badge');
+  if (!fill || !h) return;
+  const GOAL     = 21;
+  const streak   = getHabitStreak(id);
+  const newPct   = Math.min(Math.round(streak / GOAL * 100), 100);
+  const daysLeft = Math.max(GOAL - streak, 0);
+  const s = streak !== 1 ? 's' : '';
+  const formed = streak >= GOAL;
+  fill.style.width      = newPct + '%';
+  fill.style.background = formed ? '#1a9268' : color;
+  if (lbl) lbl.innerHTML = formed
+    ? `<span style="color:#1a9268;font-weight:500">¡Hábito formado! Llevas ${streak} días</span>`
+    : streak > 0
+      ? `${streak} día${s} seguido${s} · <span style="color:${color};font-weight:500">Faltan ${daysLeft}</span>`
+      : `Empieza hoy · <span style="color:${color};font-weight:500">Faltan ${GOAL}</span>`;
+  if (badge) { badge.style.color = formed ? '#1a9268' : color; badge.textContent = formed ? `✓ ${streak}d` : `${streak}/${GOAL}`; }
 }

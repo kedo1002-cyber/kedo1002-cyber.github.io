@@ -8,6 +8,7 @@ import {
   AREAS, selEventArea,
 } from '../state.js';
 import { renderEventForm } from '../actions.js';
+import { attachSwipeReveal } from '../gestures.js';
 
 /* SVGs reutilizables */
 const CHECK_SVG = `<svg width="12" height="9" viewBox="0 0 12 9" fill="none"><polyline points="1,4.5 4.5,8 11,1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
@@ -73,68 +74,15 @@ export function renderAgenda() {
 
 /* ── SWIPE-TO-COMPLETE en agenda ── */
 function _attachEventSwipe(wrap) {
-  const card = wrap.querySelector('.next-card, .event-card');
-  if (!card) return;
-  const eid  = wrap.dataset.eid;
-  const back = wrap.querySelector('.event-swipe-back');
-  const icon = wrap.querySelector('.event-swipe-icon');
-  if (!back || !icon || !eid) return;
-
-  let sx = 0, sy = 0, pull = 0, axis = null;
-
-  card.addEventListener('touchstart', e => {
-    sx = e.touches[0].clientX; sy = e.touches[0].clientY;
-    pull = 0; axis = null;
-    card.style.transition = 'none';
-    back.style.transition = 'none';
-  }, { passive: true });
-
-  card.addEventListener('touchmove', e => {
-    const dx = e.touches[0].clientX - sx;
-    const dy = e.touches[0].clientY - sy;
-    if (!axis) {
-      if (Math.abs(dx) < 5 && Math.abs(dy) < 5) return;
-      axis = Math.abs(dy) > Math.abs(dx) ? 'y' : 'x';
-    }
-    if (axis !== 'x' || dx > 0) return;
-    const raw = -dx;
-    pull = raw < 88 ? raw : 88 + (raw - 88) * 0.22;
-    pull = Math.min(pull, 118);
-    card.style.transform = `translateX(${-pull}px)`;
-    back.style.opacity   = String(Math.min(pull / 60, 1));
-    icon.classList.toggle('armed', pull >= 88);
-    e.preventDefault();
-  }, { passive: false });
-
-  const _snapBack = () => {
-    card.style.transition = 'transform 0.42s cubic-bezier(0.34,1.56,0.64,1)';
-    card.style.transform  = 'translateX(0)';
-    back.style.transition = 'opacity 0.3s ease';
-    back.style.opacity    = '0';
-    icon.classList.remove('armed');
-    pull = 0; axis = null;
-  };
-
-  card.addEventListener('touchend', () => {
-    if (axis !== 'x') { axis = null; return; }
-    if (pull >= 88) {
-      navigator.vibrate && navigator.vibrate([8, 40, 12]);
-      card.style.transition = 'transform 0.26s cubic-bezier(0.4,0,1,1)';
-      card.style.transform  = `translateX(-${card.offsetWidth + 24}px)`;
-      const ht = wrap.getBoundingClientRect().height;
-      wrap.style.height   = ht + 'px';
-      wrap.style.overflow = 'hidden';
-      setTimeout(() => {
-        wrap.style.transition   = 'height 0.3s var(--ease),opacity 0.24s var(--ease),margin 0.3s var(--ease)';
-        wrap.style.height       = '0';
-        wrap.style.opacity      = '0';
-        wrap.style.marginBottom = '0';
-        setTimeout(() => window._delEvent && window._delEvent(eid), 290);
-      }, 220);
-    } else { _snapBack(); }
-  }, { passive: true });
-
-  card.addEventListener('touchcancel', _snapBack, { passive: true });
+  const eid = wrap.dataset.eid;
+  if (!eid) return;
+  attachSwipeReveal(wrap, {
+    cardSelector: '.next-card, .event-card',
+    backSelector: '.event-swipe-back',
+    iconSelector: '.event-swipe-icon',
+    vibrate: [8, 40, 12],
+    onConfirm: () => window.kedo._delEvent(eid),
+  });
 }
 
 function initEventSwipes() {

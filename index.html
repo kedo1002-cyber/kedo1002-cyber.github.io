@@ -135,14 +135,14 @@
   </div>
 
   <nav class="nav">
-    <button class="nav-item active" id="nav-home" onclick="go('home',0)">
+    <button class="nav-item active" id="nav-home" onclick="kedo.go('home',0)">
       <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/>
       </svg>
       <div class="nav-dot"></div>
       <span class="nav-label">Hoy</span>
     </button>
-    <button class="nav-item" id="nav-agenda" onclick="go('agenda',1)">
+    <button class="nav-item" id="nav-agenda" onclick="kedo.go('agenda',1)">
       <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/>
         <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/>
@@ -150,14 +150,14 @@
       <div class="nav-dot"></div>
       <span class="nav-label">Agenda</span>
     </button>
-    <button class="nav-item" id="nav-journal" onclick="go('journal',2)">
+    <button class="nav-item" id="nav-journal" onclick="kedo.go('journal',2)">
       <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
       </svg>
       <div class="nav-dot"></div>
       <span class="nav-label">Diario</span>
     </button>
-    <button class="nav-item" id="nav-dash" onclick="go('dash',3)">
+    <button class="nav-item" id="nav-dash" onclick="kedo.go('dash',3)">
       <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M18 20V10M12 20V4M6 20v-6"/>
       </svg>
@@ -167,24 +167,24 @@
   </nav>
 
   <!-- REFLECTION MODAL -->
-  <div class="refl-overlay" id="refl-overlay" onclick="if(event.target===this)window._closeReflModal()">
+  <div class="refl-overlay" id="refl-overlay" onclick="if(event.target===this)kedo._closeReflModal()">
     <div class="refl-modal" id="refl-modal">
       <div class="refl-modal-bar"></div>
       <div class="refl-modal-scroll" id="refl-modal-content"></div>
       <div class="refl-modal-footer">
-        <button class="refl-ok-btn" id="refl-ok-btn" onclick="window._closeReflModal()">Perfecto</button>
+        <button class="refl-ok-btn" id="refl-ok-btn" onclick="kedo._closeReflModal()">Perfecto</button>
       </div>
     </div>
   </div>
 
   <!-- PLAN FAB + DRAWER (solo home) -->
-  <button class="plan-fab" id="plan-fab" onclick="window._openPlanDrawer()" aria-label="Nueva tarea">
+  <button class="plan-fab" id="plan-fab" onclick="kedo._openPlanDrawer()" aria-label="Nueva tarea">
     <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
       <line x1="11" y1="4" x2="11" y2="18" stroke="white" stroke-width="2" stroke-linecap="round"/>
       <line x1="4" y1="11" x2="18" y2="11" stroke="white" stroke-width="2" stroke-linecap="round"/>
     </svg>
   </button>
-  <div class="plan-backdrop" id="plan-backdrop" onclick="window._closePlanDrawer()"></div>
+  <div class="plan-backdrop" id="plan-backdrop" onclick="kedo._closePlanDrawer()"></div>
   <div class="plan-drawer" id="plan-drawer" role="dialog" aria-modal="true">
     <div class="plan-handle-wrap" id="plan-handle-wrap"><div class="plan-handle"></div></div>
     <div class="plan-header">

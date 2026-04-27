@@ -1,4 +1,4 @@
-const CACHE = 'kedo-brain-v18';
+const CACHE = 'kedo-brain-v19';
 const STATIC = [
   '/',
   '/index.html',
@@ -8,6 +8,7 @@ const STATIC = [
   '/icon-192.png',
   '/icon-512.png',
   '/js/state.js',
+  '/js/gestures.js',
   '/js/particles.js',
   '/js/reflection.js',
   '/js/habits.js',
