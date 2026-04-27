@@ -15,6 +15,7 @@ import {
 import { fireBurst } from './particles.js';
 import { buildReflection } from './reflection.js';
 import { getHabitsSummary } from './habits.js';
+import { initDrawerSwipe } from './gestures.js';
 // renderView se inyecta desde app.js para evitar import circular (router→views→actions→router)
 let _renderView = () => {};
 export function setRenderViewFn(fn) { _renderView = fn; }
@@ -330,49 +331,13 @@ export function addDrawerTask() {
 }
 
 /* ── SWIPE DOWN TO CLOSE DRAWER ── */
-let _dragState = { on: false, startY: 0, dy: 0, drawer: null };
-
 export function initPlanDrawerSwipe() {
-  const handle = document.getElementById('plan-handle-wrap');
-  const drawer = document.getElementById('plan-drawer');
-  if (!handle || !drawer) return;
-
-  const onStart = (e) => {
-    if (!drawer.classList.contains('open')) return;
-    const t = e.touches ? e.touches[0] : e;
-    _dragState = { on: true, startY: t.clientY, dy: 0, drawer };
-    drawer.classList.add('dragging');
-  };
-  const onMove = (e) => {
-    if (!_dragState.on) return;
-    const t = e.touches ? e.touches[0] : e;
-    const dy = t.clientY - _dragState.startY;
-    _dragState.dy = dy;
-    if (dy > 0) {
-      drawer.style.transform = `translateY(${dy}px)`;
-      /* fade backdrop con el drag */
-      const bd = document.getElementById('plan-backdrop');
-      if (bd) bd.style.opacity = String(Math.max(1 - dy / 320, 0.15));
-    }
-  };
-  const onEnd = () => {
-    if (!_dragState.on) return;
-    const dy = _dragState.dy;
-    _dragState = { on: false, startY: 0, dy: 0, drawer: null };
-    drawer.classList.remove('dragging');
-    const bd = document.getElementById('plan-backdrop');
-    if (bd) bd.style.opacity = '';
-    if (dy > 110) {
-      closePlanDrawer();
-    } else {
-      drawer.style.transform = '';
-    }
-  };
-
-  handle.addEventListener('touchstart', onStart, { passive: true });
-  handle.addEventListener('touchmove',  onMove,  { passive: true });
-  handle.addEventListener('touchend',   onEnd);
-  handle.addEventListener('touchcancel',onEnd);
+  initDrawerSwipe({
+    handleId:  'plan-handle-wrap',
+    drawerId:  'plan-drawer',
+    backdropId:'plan-backdrop',
+    onClose:    closePlanDrawer,
+  });
 }
 
 /* ── THOUGHTS (Ideas de hoy — ahora viven en Diario, 24/7) ── */

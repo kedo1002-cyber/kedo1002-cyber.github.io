@@ -4,14 +4,6 @@
    ═══════════════════════════════════════════════ */
 
 /* ── CONSTANTS ── */
-const DEFAULT_AREAS = [
-  { id:'dian',    label:'DIAN',      color:'#6c63d4', bg:'#eeecfc', tc:'#3d3898' },
-  { id:'uni',     label:'Uni',       color:'#1a9268', bg:'#e8f5f0', tc:'#0d5c42' },
-  { id:'negocio', label:'Negocio',   color:'#b8710a', bg:'#fdf3e0', tc:'#7a4a06' },
-  { id:'proy',    label:'Proyectos', color:'#c44d2a', bg:'#faeae4', tc:'#8a3118' },
-  { id:'pers',    label:'Personal',  color:'#7a7975', bg:'#f0eeea', tc:'#4a4946' },
-];
-
 export const COLOR_PRESETS = [
   { color:'#6c63d4', bg:'#eeecfc', tc:'#3d3898' },
   { color:'#1a9268', bg:'#e8f5f0', tc:'#0d5c42' },
@@ -21,6 +13,14 @@ export const COLOR_PRESETS = [
   { color:'#2a74c4', bg:'#e4eefa', tc:'#1a4f8a' },
   { color:'#c44a7e', bg:'#fae4ef', tc:'#8a3158' },
   { color:'#0d7a8a', bg:'#e0f3f5', tc:'#064f5a' },
+];
+
+const DEFAULT_AREAS = [
+  { id:'dian',    label:'DIAN',      ...COLOR_PRESETS[0] },
+  { id:'uni',     label:'Uni',       ...COLOR_PRESETS[1] },
+  { id:'negocio', label:'Negocio',   ...COLOR_PRESETS[2] },
+  { id:'proy',    label:'Proyectos', ...COLOR_PRESETS[3] },
+  { id:'pers',    label:'Personal',  ...COLOR_PRESETS[4] },
 ];
 
 export const BLOCKS = [

@@ -12,6 +12,7 @@ import {
   esc, save,
 } from '../state.js';
 import { renderDash } from './dash.js';
+import { initDrawerSwipe } from '../gestures.js';
 
 let _selColor = 0;
 
@@ -22,7 +23,7 @@ export function openAreasDrawer() {
   requestAnimationFrame(() => requestAnimationFrame(() =>
     document.getElementById('areas-drawer').classList.add('open')
   ));
-  _initSwipe();
+  initDrawerSwipe({ handleId:'areas-handle-wrap', drawerId:'areas-drawer', backdropId:'areas-overlay', onClose: closeAreasDrawer });
   navigator.vibrate && navigator.vibrate(8);
 }
 
@@ -99,11 +100,7 @@ export function areasToggleForm() {
   form.style.display = visible ? 'none' : 'block';
   if (trigger) trigger.style.display = visible ? 'flex' : 'none';
   if (!visible) {
-    _selColor = 0;
-    document.querySelectorAll('.area-color-swatch').forEach((s, i) => {
-      s.classList.toggle('sel', i === 0);
-      s.setAttribute('aria-checked', String(i === 0));
-    });
+    areasSelColor(0);
     const inp = document.getElementById('areas-add-input');
     if (inp) { inp.value = ''; inp.focus(); }
     const btn = document.getElementById('areas-confirm-btn');
@@ -142,43 +139,12 @@ function _rerenderDash() {
   if (el?.classList.contains('is-active')) renderDash();
 }
 
-/* ── SWIPE DOWN TO CLOSE ── */
-let _drag = { on: false, startY: 0, dy: 0 };
-
-function _initSwipe() {
-  const handle = document.getElementById('areas-handle-wrap');
-  const drawer = document.getElementById('areas-drawer');
-  if (!handle || !drawer || handle.dataset.swipeBound) return;
-  handle.dataset.swipeBound = '1';
-
-  handle.addEventListener('touchstart', e => {
-    if (!drawer.classList.contains('open')) return;
-    _drag = { on: true, startY: e.touches[0].clientY, dy: 0 };
-    drawer.classList.add('dragging');
-  }, { passive: true });
-
-  handle.addEventListener('touchmove', e => {
-    if (!_drag.on || !e.touches.length) return;
-    const dy = e.touches[0].clientY - _drag.startY;
-    _drag.dy = dy;
-    if (dy > 0) {
-      drawer.style.transform = `translateY(${dy}px)`;
-      const ov = document.getElementById('areas-overlay');
-      if (ov) ov.style.opacity = String(Math.max(1 - dy / 320, 0.15));
-    }
-  }, { passive: true });
-
-  const _end = () => {
-    if (!_drag.on) return;
-    const dy = _drag.dy;
-    _drag = { on: false, startY: 0, dy: 0 };
-    drawer.classList.remove('dragging');
-    const ov = document.getElementById('areas-overlay');
-    if (ov) ov.style.opacity = '';
-    if (dy > 110) closeAreasDrawer();
-    else drawer.style.transform = '';
-  };
-
-  handle.addEventListener('touchend',   _end, { passive: true });
-  handle.addEventListener('touchcancel', _end, { passive: true });
+export function exposeAreasGlobals() {
+  const k = window.kedo;
+  k._openAreasDrawer  = openAreasDrawer;
+  k._closeAreasDrawer = closeAreasDrawer;
+  k._areasSelColor    = areasSelColor;
+  k._areasToggleForm  = areasToggleForm;
+  k._areasAdd         = areasAdd;
+  k._areasDelete      = areasDelete;
 }

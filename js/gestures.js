@@ -1,15 +1,9 @@
 /* ═══════════════════════════════════════════════
    KEDO BRAIN v2 — gestures.js
    Swipe-to-reveal genérico: delete / complete
+   Swipe-down-to-close: bottom sheet drawers
    ═══════════════════════════════════════════════ */
 
-/**
- * Adjunta swipe-to-reveal izquierda a un elemento wrap.
- * onConfirm(wrap) se llama después de la animación de salida.
- *
- * @param {HTMLElement} wrap
- * @param {{ cardSelector, backSelector, iconSelector, onConfirm, vibrate? }} opts
- */
 export function attachSwipeReveal(wrap, {
   cardSelector,
   backSelector,
@@ -82,4 +76,47 @@ export function attachSwipeReveal(wrap, {
   }, { passive: true });
 
   card.addEventListener('touchcancel', snapBack, { passive: true });
+}
+
+/* ── SWIPE-DOWN-TO-CLOSE para bottom sheet drawers ── */
+export function initDrawerSwipe({ handleId, drawerId, backdropId, onClose }) {
+  const handle = document.getElementById(handleId);
+  const drawer = document.getElementById(drawerId);
+  if (!handle || !drawer || handle.dataset.swipeBound) return;
+  handle.dataset.swipeBound = '1';
+
+  let drag = { on: false, startY: 0, dy: 0 };
+
+  handle.addEventListener('touchstart', e => {
+    if (!drawer.classList.contains('open')) return;
+    const t = e.touches ? e.touches[0] : e;
+    drag = { on: true, startY: t.clientY, dy: 0 };
+    drawer.classList.add('dragging');
+  }, { passive: true });
+
+  handle.addEventListener('touchmove', e => {
+    if (!drag.on) return;
+    const t = e.touches ? e.touches[0] : e;
+    const dy = t.clientY - drag.startY;
+    drag.dy = dy;
+    if (dy > 0) {
+      drawer.style.transform = `translateY(${dy}px)`;
+      const bd = backdropId ? document.getElementById(backdropId) : null;
+      if (bd) bd.style.opacity = String(Math.max(1 - dy / 320, 0.15));
+    }
+  }, { passive: true });
+
+  const end = () => {
+    if (!drag.on) return;
+    const dy = drag.dy;
+    drag = { on: false, startY: 0, dy: 0 };
+    drawer.classList.remove('dragging');
+    const bd = backdropId ? document.getElementById(backdropId) : null;
+    if (bd) bd.style.opacity = '';
+    if (dy > 110) onClose();
+    else drawer.style.transform = '';
+  };
+
+  handle.addEventListener('touchend',    end, { passive: true });
+  handle.addEventListener('touchcancel', end, { passive: true });
 }
