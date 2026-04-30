@@ -5,7 +5,7 @@
 
 /* ── CONSTANTS ── */
 export const COLOR_PRESETS = [
-  { color:'#6c63d4', bg:'#eeecfc', tc:'#3d3898' },
+  { color:'#c8242b', bg:'#fde8e8', tc:'#8c1a1e' },
   { color:'#1a9268', bg:'#e8f5f0', tc:'#0d5c42' },
   { color:'#b8710a', bg:'#fdf3e0', tc:'#7a4a06' },
   { color:'#c44d2a', bg:'#faeae4', tc:'#8a3118' },

@@ -20,7 +20,7 @@ import { attachSwipeReveal } from './gestures.js';
    66d = hábito profundo   → reconocimiento especial
 */
 export const STREAK_THRESHOLDS = [
-  { days: 66, label: 'Parte de ti',  color: '#6c63d4' },
+  { days: 66, label: 'Parte de ti',  color: '#c8242b' },
   { days: 21, label: 'Automatizado', color: '#1a9268' },
   { days:  7, label: 'En racha',     color: '#b8710a' },
   { days:  3, label: 'Iniciando',    color: '#c44d2a' },
@@ -32,7 +32,7 @@ export function getStreakLevel(streak) {
 
 /* ── HÁBITOS PREDETERMINADOS (sugeridos al primer uso) ── */
 export const DEFAULT_HABITS = [
-  { id: 'h_meditar',   nombre: 'Meditar',       icono: '🧘', color: '#6c63d4' },
+  { id: 'h_meditar',   nombre: 'Meditar',       icono: '🧘', color: '#c8242b' },
   { id: 'h_ejercicio', nombre: 'Ejercicio',      icono: '💪', color: '#c44d2a' },
   { id: 'h_leer',      nombre: 'Leer',           icono: '📖', color: '#1a9268' },
   { id: 'h_agua',      nombre: 'Agua (2L)',       icono: '💧', color: '#378add' },
@@ -59,7 +59,7 @@ export function toggleHabitToday(habitId) {
 export function addHabit(nombre, icono, color) {
   if (!nombre?.trim()) return null;
   const id = 'h_' + Date.now();
-  const newHabit = { id, nombre: nombre.trim(), icono: icono || '✦', color: color || '#6c63d4' };
+  const newHabit = { id, nombre: nombre.trim(), icono: icono || '✦', color: color || '#c8242b' };
   setHabits([...habits, newHabit]);
   save();
   return newHabit;
@@ -152,7 +152,7 @@ export function renderHabitsSection() {
   const r = 17;
   const circ = 2 * Math.PI * r;
   const offset = circ - (ringPct / 100) * circ;
-  const ringColor = allDone ? '#1a9268' : '#6c63d4';
+  const ringColor = allDone ? '#1a9268' : '#c8242b';
 
   return `
   <div class="habits-header pe pe1">
@@ -242,7 +242,7 @@ function _updateRingSurgical() {
   const totalCount = habits.length;
   const ringPct  = totalCount > 0 ? Math.round(doneCount / totalCount * 100) : 0;
   const allDone  = doneCount === totalCount;
-  const ringColor = allDone ? '#1a9268' : '#6c63d4';
+  const ringColor = allDone ? '#1a9268' : '#c8242b';
   const r = 17, circ = 2 * Math.PI * r;
   const offset = circ - (ringPct / 100) * circ;
 
@@ -281,7 +281,7 @@ export function initHabitHandlers(renderHomeFn) {
     const wasCompleted = toggleHabitToday(id);
     const el = document.querySelector(`[data-hid="${id}"]`);
     const h  = habits.find(hb => hb.id === id);
-    const color = h?.color || '#6c63d4';
+    const color = h?.color || '#c8242b';
 
     _updateRingSurgical();
 
@@ -338,7 +338,7 @@ export function initHabitHandlers(renderHomeFn) {
   k._habitAddSave = () => {
     const inp = document.getElementById('habit-add-name');
     if (!inp?.value.trim()) return;
-    addHabit(inp.value.trim(), _selectedIcon, '#6c63d4');
+    addHabit(inp.value.trim(), _selectedIcon, '#c8242b');
     k._habitAddClose();
     _refreshHabitsSection();
   };

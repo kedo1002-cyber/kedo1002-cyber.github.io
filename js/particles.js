@@ -48,7 +48,7 @@ function burstTask(x, y) {
 
 /* ── BURST HABIT (púrpura/estrellas) ── */
 function burstHabit(x, y) {
-  const hc = ['#6c63d4','#8b80f0','#afa9ec','#c4bef8','#fff'];
+  const hc = ['#c8242b','#d94a51','#e89498','#f5c6c8','#fff'];
   for (let i = 0; i < 28; i++) {
     const ang = (Math.random() * Math.PI * 2);
     const spd = 1.8 + Math.random() * 4.2;

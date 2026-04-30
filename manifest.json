@@ -1,6 +1,6 @@
 {
-  "name": "KEDO Brain",
-  "short_name": "KEDO Brain",
+  "name": "M2C",
+  "short_name": "M2C",
   "description": "Tu sistema de productividad personal",
   "start_url": "/",
   "display": "standalone",
