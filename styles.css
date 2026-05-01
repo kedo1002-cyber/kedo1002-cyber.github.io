@@ -442,7 +442,7 @@ body{font-family:'DM Sans',system-ui,sans-serif;color:var(--text);-webkit-font-s
 .ideas-send{
   position:absolute;right:8px;bottom:8px;
   width:34px;height:34px;border-radius:var(--r-sm);
-  background:var(--green);border:none;cursor:pointer;
+  background:var(--purple);border:none;cursor:pointer;
   display:flex;align-items:center;justify-content:center;
   opacity:0.28;pointer-events:none;
   transition:opacity 0.2s var(--ease),transform 0.2s var(--spring);
