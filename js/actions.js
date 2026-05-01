@@ -183,8 +183,7 @@ export function openPlanDrawer() {
   backdrop.classList.add('open');
   /* doble RAF garantiza transición desde translateY(110%) */
   requestAnimationFrame(() => requestAnimationFrame(() => drawer.classList.add('open')));
-  /* focus en input tras la animación */
-  setTimeout(() => document.getElementById('plan-inp')?.focus(), 380);
+  /* sin autofocus — el border se activa solo cuando el usuario empieza a escribir */
   navigator.vibrate && navigator.vibrate(8);
 }
 
