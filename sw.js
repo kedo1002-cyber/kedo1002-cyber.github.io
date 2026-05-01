@@ -1,8 +1,8 @@
-const CACHE = 'kedo-brain-v25';
+const CACHE = 'kedo-brain-v26';
 const STATIC = [
   '/',
   '/index.html',
-  '/styles.css?v=23',
+  '/styles.css?v=25',
   '/app.js',
   '/manifest.json',
   '/icon-192.png',
@@ -39,19 +39,22 @@ self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
   if (url.hostname === 'api.anthropic.com') return;
 
-  /* Navegación: cache-first → app arranca instantáneo sin esperar la red */
+  /* Navegación: network-first → siempre baja el HTML más nuevo cuando hay red.
+     Fallback a caché para modo offline. */
   if (e.request.mode === 'navigate') {
     e.respondWith(
-      caches.match('/index.html')
-        .then(cached => cached || fetch(e.request))
+      fetch(e.request)
+        .then(res => {
+          if (res.ok) { const clone = res.clone(); caches.open(CACHE).then(c => c.put('/index.html', clone)); }
+          return res;
+        })
         .catch(() => caches.match('/index.html'))
     );
     return;
   }
 
-  /* Todo lo demás: cache-first
-     El bump de CACHE en cada deploy garantiza que los archivos nuevos
-     se descarguen en la instalación del SW, no en cada apertura. */
+  /* Todo lo demás: cache-first.
+     El bump de CACHE + query param en CSS garantiza descarga fresca en cada deploy. */
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;
