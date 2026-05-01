@@ -1,8 +1,8 @@
-const CACHE = 'kedo-brain-v23';
+const CACHE = 'kedo-brain-v24';
 const STATIC = [
   '/',
   '/index.html',
-  '/styles.css',
+  '/styles.css?v=23',
   '/app.js',
   '/manifest.json',
   '/icon-192.png',
